@@ -1,0 +1,4 @@
+CMSA :
+CMSA APIs are CUSTOMER centric. This means that all the API resources (unless specified differently)
+has to limit output to the customer (from JWT token) and country (from URL) from the request. 
+I.e. GET /cpe should return CPEs from DB/synchronisation only that belong to the customer.
