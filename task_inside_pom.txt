@@ -1,0 +1,12 @@
+<tasks>
+    <taskdef uri="groovy:maven" resource="org/codehaus/groovy/maven/tasks/groovy-ant- tasks" classpathref="maven.compile.classpath" />
+    <groovy>
+        <![CDATA[
+            ant.groovy("""
+                dependencies {
+                    implementation 'group:artifact:version'
+                }
+            """)
+        ]]>
+    </groovy>
+</tasks>
