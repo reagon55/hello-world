@@ -1,0 +1,57 @@
+To add a dependency from Gradle inside a Maven project, you can use the Gradle Maven plugin. This plugin allows you to execute Gradle builds from Maven, making it possible to include dependencies managed by Gradle in a Maven project.
+
+Here's a basic outline of the steps:
+
+Add Gradle Plugin to Maven:
+Add the gmaven-plugin to your Maven project. This plugin allows you to execute Gradle builds from Maven. Include the following plugin configuration in your Maven pom.xml:
+
+xml
+Copy code
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.codehaus.gmaven</groupId>
+            <artifactId>gmaven-plugin</artifactId>
+            <version>1.4</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>execute</goal>
+                    </goals>
+                    <phase>generate-sources</phase>
+                    <configuration>
+                        <tasks>
+                            <!-- Gradle tasks go here -->
+                        </tasks>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+    </plugins>
+</build>
+Specify Gradle Dependencies:
+Inside the tasks configuration of the gmaven-plugin, you can specify Gradle tasks that define dependencies. For example, you might use the dependencies task to print dependencies:
+
+xml
+Copy code
+<tasks>
+    <taskdef uri="groovy:maven" resource="org/codehaus/groovy/maven/tasks/groovy-ant- tasks" classpathref="maven.compile.classpath" />
+    <groovy>
+        <![CDATA[
+            ant.groovy("""
+                dependencies {
+                    implementation 'group:artifact:version'
+                }
+            """)
+        ]]>
+    </groovy>
+</tasks>
+Replace 'group:artifact:version' with the actual coordinates of your Gradle dependency.
+
+Run Maven Build:
+Execute the Maven build, and the gmaven-plugin will execute the specified Gradle tasks. This will effectively resolve and download the Gradle dependencies into your Maven project.
+
+bash
+Copy code
+mvn clean install
+Keep in mind that while this approach technically allows you to bring Gradle dependencies into a Maven project, it's generally advisable to manage dependencies consistently within a single build tool (either Maven or Gradle) to avoid complexity and potential issues. If possible, consider migrating the entire project to the chosen build tool (either Maven or Gradle) for more straightforward dependency management.
