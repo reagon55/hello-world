@@ -184,3 +184,21 @@ wifi.setId(wifiId);
         wifi.setLastUpdate(acsResponse.getLastUpdate());
         wifi.setParameters(acsResponse.getParameters());
         return wifi;
+
+//set
+private void updateWiFiFields(WiFi wifi, WiFi updatedWiFi) {
+        wifi.setSsid(updatedWiFi.getSsid());
+        wifi.setKeyPassphrase(updatedWiFi.getKeyPassphrase());
+        wifi.setEnable(updatedWiFi.isEnable());
+        wifi.setEnabledTill(updatedWiFi.getEnabledTill());
+        wifi.setBroadcast(updatedWiFi.isBroadcast());
+        wifi.setSecurityMode(updatedWiFi.getSecurityMode());
+        wifi.setNodeRule(updatedWiFi.getNodeRule());
+        wifi.setVersion(updatedWiFi.getVersion());
+        wifi.setNetwork(updatedWiFi.getNetwork());
+        wifi.setControl(updatedWiFi.getControl());
+        wifi.setLastRefresh(updatedWiFi.getLastRefresh());
+        wifi.setRoundTrip(updatedWiFi.getRoundTrip());
+        wifi.setLastUpdate(updatedWiFi.getLastUpdate());
+        wifi.setParameters(updatedWiFi.getParameters());
+    }
