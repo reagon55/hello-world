@@ -164,3 +164,23 @@ public class ACSResponse {
         this.parameters = parameters;
     }
 }
+
+
+// set of fields
+
+wifi.setId(wifiId);
+        wifi.setSsid(acsResponse.getSsid());
+        wifi.setKeyPassphrase(acsResponse.getPassphrase());
+        wifi.setEnable(acsResponse.isEnable());
+        wifi.setEnabledTill(acsResponse.getEnabledTill());
+        wifi.setBroadcast(acsResponse.isBroadcast());
+        wifi.setSecurityMode(acsResponse.getSecurityMode());
+        wifi.setNodeRule(acsResponse.getNodeRule());
+        wifi.setVersion(acsResponse.getVersion());
+        wifi.setNetwork(acsResponse.getNetwork());
+        wifi.setControl(acsResponse.getControl());
+        wifi.setLastRefresh(acsResponse.getLastRefresh());
+        wifi.setRoundTrip(acsResponse.getRoundTrip());
+        wifi.setLastUpdate(acsResponse.getLastUpdate());
+        wifi.setParameters(acsResponse.getParameters());
+        return wifi;
