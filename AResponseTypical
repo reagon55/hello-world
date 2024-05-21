@@ -1,0 +1,166 @@
+package com.lgi.msa.one.wifi.model;
+
+import java.util.Map;
+
+public class ACSResponse {
+    private boolean enable;
+    private String enabledTill;
+    private String passphrase;
+    private boolean broadcast;
+    private String securityMode;
+    private String nodeRule;
+    private int version;
+    private String id;
+    private String network;
+    private String ssid;
+    private String control;
+    private String lastRefresh;
+    private String roundTrip;
+    private String lastUpdate;
+    private Map<String, String> parameters;
+
+    // Default constructor
+    public ACSResponse() {}
+
+    // Parameterized constructor
+    public ACSResponse(boolean enable, String enabledTill, String passphrase, boolean broadcast, String securityMode,
+                       String nodeRule, int version, String id, String network, String ssid, String control,
+                       String lastRefresh, String roundTrip, String lastUpdate, Map<String, String> parameters) {
+        this.enable = enable;
+        this.enabledTill = enabledTill;
+        this.passphrase = passphrase;
+        this.broadcast = broadcast;
+        this.securityMode = securityMode;
+        this.nodeRule = nodeRule;
+        this.version = version;
+        this.id = id;
+        this.network = network;
+        this.ssid = ssid;
+        this.control = control;
+        this.lastRefresh = lastRefresh;
+        this.roundTrip = roundTrip;
+        this.lastUpdate = lastUpdate;
+        this.parameters = parameters;
+    }
+
+    // Getters and Setters
+    public boolean isEnable() {
+        return enable;
+    }
+
+    public void setEnable(boolean enable) {
+        this.enable = enable;
+    }
+
+    public String getEnabledTill() {
+        return enabledTill;
+    }
+
+    public void setEnabledTill(String enabledTill) {
+        this.enabledTill = enabledTill;
+    }
+
+    public String getPassphrase() {
+        return passphrase;
+    }
+
+    public void setPassphrase(String passphrase) {
+        this.passphrase = passphrase;
+    }
+
+    public boolean isBroadcast() {
+        return broadcast;
+    }
+
+    public void setBroadcast(boolean broadcast) {
+        this.broadcast = broadcast;
+    }
+
+    public String getSecurityMode() {
+        return securityMode;
+    }
+
+    public void setSecurityMode(String securityMode) {
+        this.securityMode = securityMode;
+    }
+
+    public String getNodeRule() {
+        return nodeRule;
+    }
+
+    public void setNodeRule(String nodeRule) {
+        this.nodeRule = nodeRule;
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getNetwork() {
+        return network;
+    }
+
+    public void setNetwork(String network) {
+        this.network = network;
+    }
+
+    public String getSsid() {
+        return ssid;
+    }
+
+    public void setSsid(String ssid) {
+        this.ssid = ssid;
+    }
+
+    public String getControl() {
+        return control;
+    }
+
+    public void setControl(String control) {
+        this.control = control;
+    }
+
+    public String getLastRefresh() {
+        return lastRefresh;
+    }
+
+    public void setLastRefresh(String lastRefresh) {
+        this.lastRefresh = lastRefresh;
+    }
+
+    public String getRoundTrip() {
+        return roundTrip;
+    }
+
+    public void setRoundTrip(String roundTrip) {
+        this.roundTrip = roundTrip;
+    }
+
+    public String getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(String lastUpdate) {
+        this.lastUpdate = lastUpdate;
+    }
+
+    public Map<String, String> getParameters() {
+        return parameters;
+    }
+
+    public void setParameters(Map<String, String> parameters) {
+        this.parameters = parameters;
+    }
+}
