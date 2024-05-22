@@ -113,4 +113,135 @@ public class OneWiFiService {
         acsService.enableZeroTouch();
         log.debug("Zero Touch enabled");
     }
+}'
+
+new 
+
+package com.lgi.msa.one.wifi.service;
+
+import com.lgi.msa.one.wifi.model.ACSResponse;
+import com.lgi.msa.one.wifi.model.HouseKeeping;
+import com.lgi.msa.one.wifi.model.AcsDevice;
+import com.lgi.msa.one.wifi.model.WiFi;
+import com.lgi.msa.one.wifi.service.external.ACSService;
+import com.lgi.msa.one.wifi.service.external.ACSDeviceProvider;
+import com.lgi.msa.one.wifi.service.external.ContextService;
+import com.lgi.msa.one.wifi.service.external.UpstreamServiceException;
+
+import javax.inject.Inject;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class OneWiFiService {
+
+    private final ACSService acsService;
+    private final ACSDeviceProvider acsDeviceProvider;
+    private final ContextService contextService;
+    private final WiFiTransactionalService wifiTransactionalService;
+
+    @Inject
+    public OneWiFiService(ACSService acsService,
+                          ACSDeviceProvider acsDeviceProvider,
+                          ContextService contextService,
+                          WiFiTransactionalService wifiTransactionalService) {
+        this.acsService = acsService;
+        this.acsDeviceProvider = acsDeviceProvider;
+        this.contextService = contextService;
+        this.wifiTransactionalService = wifiTransactionalService;
+    }
+
+    public void doEnforceState(OneWiFiRequest oneWiFiRequest) {
+        var ssid = oneWiFiRequest.getSsid();
+        try {
+            var acsDevices = acsService.getDevices();
+            boolean zeroTouchEnabled = acsService.getCustomerData(wiFi.getId()).isZeroTouchEnabled();
+            var keyPassphrase = acsDeviceProvider.getKeyPassphrase(ssid, acsDevices)
+                    .orElseThrow(() -> new TargetResourceNotFoundException("Unable to find KeyPassphrase"));
+
+            updateModem(ssid, keyPassphrase, acsDevices);
+            updateBoosters(ssid, keyPassphrase, acsDevices);
+            if (!zeroTouchEnabled) {
+                enableZeroTouch();
+            }
+
+            // Ensure resolveHousehold returns a HouseKeeping object
+            HouseKeeping houseKeeping = resolveHousehold(ssid, acsDevices);
+
+            // Fetch ACS responses directly from ACSService
+            List<ACSResponse> acsResponses = fetchAcsResponses(acsDevices);
+
+            // Update and save HouseKeeping with ACS responses
+            wifiTransactionalService.updateAndSave(houseKeeping, acsResponses);
+        } catch (Exception e) {
+            log.error("[One WiFi] Cannot enable OneWiFi for customer={}, country={}",
+                    contextService.getLgiCustomerId(), contextService.getCountry(), e);
+            throw new UpstreamServiceException(e);
+        }
+    }
+
+    private List<ACSResponse> fetchAcsResponses(List<AcsDevice> acsDevices) {
+        return acsDevices.stream()
+                .map(device -> {
+                    Map<String, String> parameters = getNetworkParameters(device);
+                    // Assume ACSResponse constructor or builder can accept parameters map
+                    return new ACSResponse(device.getId(), parameters);
+                })
+                .collect(Collectors.toList());
+    }
+
+    private Map<String, String> getNetworkParameters(AcsDevice device) {
+        // Mock implementation assuming sendAcsParameters could be repurposed
+        // Normally, this would be a fetch call to some ACS endpoint
+        Map<String, String> parameters = new HashMap<>();
+        acsService.sendAcsParameters(device, parameters);
+        // Logic to fill in the parameters map
+        return parameters;
+    }
+
+    private HouseKeeping resolveHousehold(String ssid, List<AcsDevice> acsDevices) {
+        log.debug("Going to update Household");
+
+        var lastActiveModem = acsDeviceProvider.getLastActiveModem(acsDevices)
+                .orElseThrow(() -> new TargetResourceNotFoundException("Unable to find last active modem: ssid=" + ssid));
+
+        // Assume you have a method to convert AcsDevice to WiFi
+        List<WiFi> wifiNetworks = acsDevices.stream()
+                .map(this::convertAcsDeviceToWiFi)
+                .collect(Collectors.toList());
+
+        HouseKeeping houseKeeping = HouseKeeping.builder()
+                .networks(wifiNetworks)
+                .build();
+
+        houseKeeping.addAll(wifiNetworks); // Use the addAll method to add networks
+
+        log.debug("Household checked");
+
+        return houseKeeping;
+    }
+
+    private WiFi convertAcsDeviceToWiFi(AcsDevice acsDevice) {
+        // Your logic to convert AcsDevice to WiFi object
+        WiFi wifi = new WiFi();
+        // Set fields from acsDevice to wifi
+        wifi.setId(acsDevice.getId());
+        // Set other necessary fields
+        return wifi;
+    }
+
+    private void updateModem(String ssid, String keyPassphrase, List<AcsDevice> acsDevices) {
+        // Your logic to update modem
+    }
+
+    private void updateBoosters(String ssid, String keyPassphrase, List<AcsDevice> acsDevices) {
+        acsDevices.forEach(device -> acsService.updateBooster(device, ssid, keyPassphrase));
+    }
+
+    private void enableZeroTouch() {
+        log.debug("Going to enable Zero Touch");
+        acsService.enableZeroTouch();
+        log.debug("Zero Touch enabled");
+    }
 }
+
