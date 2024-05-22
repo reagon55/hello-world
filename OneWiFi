@@ -245,3 +245,44 @@ public class OneWiFiService {
     }
 }
 
+
+
+// update and save
+
+package com.lgi.msa.one.wifi.service;
+
+import com.lgi.msa.one.wifi.model.ACSResponse;
+import com.lgi.msa.one.wifi.model.HouseKeeping;
+import com.lgi.msa.one.wifi.repository.HouseKeepingRepository;
+
+import javax.inject.Inject;
+import java.util.List;
+
+public class WiFiTransactionalService {
+
+    private final HouseKeepingRepository houseKeepingRepository;
+
+    @Inject
+    public WiFiTransactionalService(HouseKeepingRepository houseKeepingRepository) {
+        this.houseKeepingRepository = houseKeepingRepository;
+    }
+
+    public void updateAndSave(HouseKeeping houseKeeping, List<ACSResponse> acsResponses) {
+        // Update the HouseKeeping object with ACSResponse data
+        for (ACSResponse acsResponse : acsResponses) {
+            // Find the corresponding WiFi network in houseKeeping
+            houseKeeping.getNetworks().stream()
+                    .filter(wifi -> wifi.getId().equals(acsResponse.getDeviceId()))
+                    .forEach(wifi -> {
+                        // Update the WiFi object with ACSResponse parameters
+                        Map<String, String> parameters = acsResponse.getParameters();
+                        wifi.setSsid(parameters.get("ssid"));
+                        wifi.setPassphrase(parameters.get("passphrase"));
+                        // Update other necessary fields
+                    });
+        }
+
+        // Save the updated HouseKeeping object to the repository
+        houseKeepingRepository.save(houseKeeping);
+    }
+}
