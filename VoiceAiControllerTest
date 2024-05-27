@@ -1,0 +1,49 @@
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
+
+@ExtendWith(MockitoExtension.class)
+public class VoiceAiControllerTest {
+
+    @Mock
+    private VoiceAiService voiceAiService;
+
+    @InjectMocks
+    private VoiceAiController voiceAiController;
+
+    private MultipartFile file;
+    private String authorization;
+    private String encoding;
+    private String sampleRateHertz;
+
+    @BeforeEach
+    void setUp() {
+        authorization = "Bearer xxxxxxxx";
+        file = new MockMultipartFile("file", "Ios_recording.flac", "audio/flac", "test data".getBytes());
+        encoding = "flac";
+        sampleRateHertz = "48000";
+    }
+
+    @Test
+    void testProcessVoice() {
+        // Arrange
+        VoiceAiDetails mockDetails = new VoiceAiDetails(); // Initialize this with appropriate test data
+        when(voiceAiService.processVoice(anyString(), any(MultipartFile.class), anyString(), anyString())).thenReturn(mockDetails);
+
+        // Act
+        ResponseEntity<Object> response = voiceAiController.processVoice(authorization, file, encoding, sampleRateHertz);
+
+        // Assert
+        assertEquals(ResponseEntity.ok(mockDetails), response);
+        verify(voiceAiService, times(1)).processVoice(authorization, file, encoding, sampleRateHertz);
+    }
+}
