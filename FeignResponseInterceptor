@@ -1,0 +1,32 @@
+package com.lgi.msa.voiceai.client;
+
+import feign.RequestInterceptor;
+import feign.RequestTemplate;
+import feign.Response;
+import feign.codec.ErrorDecoder;
+import org.springframework.stereotype.Component;
+
+@Component
+public class FeignResponseInterceptor implements RequestInterceptor, ErrorDecoder {
+
+    private static final ThreadLocal<Integer> responseStatus = new ThreadLocal<>();
+
+    @Override
+    public void apply(RequestTemplate template) {
+        // You can add any headers if required here
+    }
+
+    @Override
+    public Exception decode(String methodKey, Response response) {
+        responseStatus.set(response.status());
+        return new RuntimeException("Feign client error: " + response.reason());
+    }
+
+    public static int getResponseStatus() {
+        return responseStatus.get();
+    }
+
+    public static void clearResponseStatus() {
+        responseStatus.remove();
+    }
+}
