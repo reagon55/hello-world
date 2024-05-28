@@ -1,0 +1,157 @@
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.web.multipart.MultipartFile;
+
+public class VoiceAIServiceTest {
+
+    @InjectMocks
+    private VoiceAIServiceImpl voiceAIService;
+
+    @Mock
+    private JwtUtils jwtUtils;
+
+    @Mock
+    private CoPoContextProvider coPoContextProvider;
+
+    @Mock
+    private AuthServerService authServerService;
+
+    @Mock
+    private AwsAIConnectorService awsAIConnectorService;
+
+    @Mock
+    private DeviceClient deviceClient;
+
+    @Mock
+    private MultipartFile file;
+
+    @Mock
+    private JWTShellContextProvider jwtShellContextProvider;
+
+    @Mock
+    private JooqVoiceAIRepository jooqVoiceAIRepository;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testProcessVoice() throws IOException {
+        String authHeader = "Bearer someToken";
+        String encoding = "encoding";
+        String sampleRate = "16000";
+        String customerId = "customerId";
+        String coPoValue = "coPoValue";
+        String generatedToken = "generatedToken";
+        byte[] fileData = new byte[]{1, 2, 3};
+        String fileName = "testFile.wav";
+        String transcriptText = "transcriptText";
+        LLMProcessor llmMapping = mock(LLMProcessor.class);
+
+        when(jwtUtils.getCustomerId(anyString())).thenReturn(customerId);
+        when(coPoContextProvider.getCoPoValue()).thenReturn(coPoValue);
+        when(authServerService.getToken(customerId)).thenReturn(generatedToken);
+        when(file.getBytes()).thenReturn(fileData);
+        when(file.getOriginalFilename()).thenReturn(fileName);
+        when(awsAIConnectorService.transcribeAudio(anyString(), anyString(), any(), anyString(), anyInt())).thenReturn(transcriptText);
+        when(awsAIConnectorService.processTranscribe(anyString(), anyString(), anyString())).thenReturn(llmMapping);
+        when(llmMapping.getUseCase()).thenReturn("SHOW_CONNECTED_DEVICES");
+        when(deviceClient.getDevices(anyString(), anyString())).thenReturn(new Object());
+
+        VoiceDetails result = voiceAIService.processVoice(authHeader, file, encoding, sampleRate);
+
+        assertNotNull(result);
+        assertTrue(result.getAiResponse().containsKey("SHOW_CONNECTED_DEVICES"));
+    }
+
+    @Test
+    public void testProcessVoice_FileIOException() throws IOException {
+        String authHeader = "Bearer someToken";
+        String encoding = "encoding";
+        String sampleRate = "16000";
+
+        when(file.getBytes()).thenThrow(new IOException("Unable to read file"));
+
+        Exception exception = assertThrows(InternalServerException.class, () ->
+                voiceAIService.processVoice(authHeader, file, encoding, sampleRate));
+
+        assertEquals("Transcript Not Found", exception.getMessage());
+    }
+
+    @Test
+    public void testProcessVoice_TranscriptTextNull() throws IOException {
+        String authHeader = "Bearer someToken";
+        String encoding = "encoding";
+        String sampleRate = "16000";
+        String customerId = "customerId";
+        String coPoValue = "coPoValue";
+        String generatedToken = "generatedToken";
+
+        when(jwtUtils.getCustomerId(anyString())).thenReturn(customerId);
+        when(coPoContextProvider.getCoPoValue()).thenReturn(coPoValue);
+        when(authServerService.getToken(customerId)).thenReturn(generatedToken);
+        when(awsAIConnectorService.transcribeAudio(anyString(), anyString(), any(), anyString(), anyInt())).thenReturn(null);
+
+        Exception exception = assertThrows(InternalServerException.class, () ->
+                voiceAIService.processVoice(authHeader, file, encoding, sampleRate));
+
+        assertEquals("Transcript Not Found", exception.getMessage());
+    }
+
+    @Test
+    public void testProcessVoice_LLMMappingNull() throws IOException {
+        String authHeader = "Bearer someToken";
+        String encoding = "encoding";
+        String sampleRate = "16000";
+        String customerId = "customerId";
+        String coPoValue = "coPoValue";
+        String generatedToken = "generatedToken";
+        String transcriptText = "transcriptText";
+
+        when(jwtUtils.getCustomerId(anyString())).thenReturn(customerId);
+        when(coPoContextProvider.getCoPoValue()).thenReturn(coPoValue);
+        when(authServerService.getToken(customerId)).thenReturn(generatedToken);
+        when(awsAIConnectorService.transcribeAudio(anyString(), anyString(), any(), anyString(), anyInt())).thenReturn(transcriptText);
+        when(awsAIConnectorService.processTranscribe(anyString(), anyString(), anyString())).thenReturn(null);
+
+        Exception exception = assertThrows(InternalServerException.class, () ->
+                voiceAIService.processVoice(authHeader, file, encoding, sampleRate));
+
+        assertEquals("LLM Mapping Not Found", exception.getMessage());
+    }
+
+    @Test
+    public void testProcessVoice_UnsupportedUseCase() throws IOException {
+        String authHeader = "Bearer someToken";
+        String encoding = "encoding";
+        String sampleRate = "16000";
+        String customerId = "customerId";
+        String coPoValue = "coPoValue";
+        String generatedToken = "generatedToken";
+        String transcriptText = "transcriptText";
+        LLMProcessor llmMapping = mock(LLMProcessor.class);
+
+        when(jwtUtils.getCustomerId(anyString())).thenReturn(customerId);
+        when(coPoContextProvider.getCoPoValue()).thenReturn(coPoValue);
+        when(authServerService.getToken(customerId)).thenReturn(generatedToken);
+        when(file.getBytes()).thenReturn(new byte[0]);
+        when(file.getOriginalFilename()).thenReturn("");
+        when(awsAIConnectorService.transcribeAudio(anyString(), anyString(), any(), anyString(), anyInt())).thenReturn(transcriptText);
+        when(awsAIConnectorService.processTranscribe(anyString(), anyString(), anyString())).thenReturn(llmMapping);
+        when(llmMapping.getUseCase()).thenReturn("UNSUPPORTED_USE_CASE");
+
+        Exception exception = assertThrows(UnsupportedOperationException.class, () ->
+                voiceAIService.processVoice(authHeader, file, encoding, sampleRate));
+
+        assertEquals("Use Case not supported", exception.getMessage());
+    }
+}
