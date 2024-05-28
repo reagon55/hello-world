@@ -1,0 +1,17 @@
+-- Update the table with transcript text if available
+UPDATE voice_ai
+SET result = 'transcript_text_value', updated_at = NOW()
+WHERE id = 1 AND transcript_text IS NOT NULL;
+
+-- Update the table with llm audio mapping if available
+UPDATE voice_ai
+SET llm_audio_mapping = 'llm_mapping_value', updated_at = NOW()
+WHERE id = 1 AND llm_mapping IS NOT NULL;
+
+-- Check the status of the device and update status accordingly
+UPDATE voice_ai
+SET status = CASE 
+              WHEN response_code = 200 THEN 'Success' 
+              ELSE 'Failure' 
+            END, updated_at = NOW()
+WHERE id = 1;
