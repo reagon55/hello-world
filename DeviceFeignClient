@@ -1,0 +1,14 @@
+package com.lgi.msa.voiceai.client;
+
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
+
+@FeignClient(name = "device-service", url = "${feign.client.config.device.url}", configuration = FeignConfiguration.class)
+public interface DeviceFeignClient {
+
+    @GetMapping(value = "/{opCo}/")
+    Object getDevices(@RequestHeader(HttpHeaders.AUTHORIZATION) String accessToken, @PathVariable("opCo") String opCo);
+}
