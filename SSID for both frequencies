@@ -1,0 +1,49 @@
+Sure, I'll summarize the content of the images provided:
+
+Image 1:
+
+The document describes the criteria that must be met for a user to be in the "OneWiFi" state.
+These criteria include:
+SSID for both frequencies (2.4 and 5 GHz) and all CPEs (Customer Premises Equipment) in the household being the same.
+Passphrase for both frequencies and all CPEs in the household being the same.
+All CPE 2.4 GHz radio bands being enabled.
+All CPE 5 GHz radio bands being enabled.
+SSID broadcasting being enabled for both frequencies and all CPEs.
+Smart WiFi (Plume agent) being enabled.
+Channel selection being set to auto for both frequencies and all CPEs.
+Security type set to WPA2-PSK for both frequencies and all CPEs.
+Zero Touch being enabled.
+Image 2:
+
+This document outlines the overview of defining the OneWiFi state.
+For the GET request of one-wifi response:
+Status can be ON, OFF, IN_PROGRESS.
+If the criteria-not-met list is not empty, it indicates that some OneWiFi criteria are not met.
+Contains parameters like last refresh time and round trip time.
+It checks various values of criteria-not-met including SSID, passphrase, band, SSID broadcasting, Plume agent, auto channel, security type, and zero touch.
+Image 3:
+
+This document elaborates on the logic for the POST request of one-wifi response.
+The logic includes:
+Adding or updating the record of one WiFi state in the database with status as IN_PROGRESS.
+It also logs criteria not met, last refresh date, and round trip details.
+It then sends the data to the backend (ASC/Plume) and starts the stabilization period.
+The response includes the to-be state from the database.
+Image 4:
+
+This is a continuation of the logic for the POST request for one-wifi state.
+It further describes the process of updating the state record with similar steps as mentioned in the previous image.
+It involves reading the data from CPE, sending the data to backend, and starting the stabilization period.
+Image 5:
+
+This document details the definitions of criteria not met for OneWiFi.
+It includes specific settings that must be true for the user to be in OneWiFi state:
+SSID for both frequencies and all CPEs being the same.
+Passphrase for both frequencies and all CPEs being the same.
+Enabling 2.4 GHz and 5 GHz radio bands for all CPEs.
+SSID broadcasting being enabled for both frequencies and all CPEs.
+Smart WiFi (Plume agent) being enabled.
+Channel selection set to auto for both frequencies and all CPEs.
+Security type set to WPA2-PSK for both frequencies and all CPEs.
+Zero Touch being enabled.
+These documents seem to be part of the technical specifications and guidelines for ensuring that the OneWiFi service criteria are met and properly managed. If you need further detailed explanations or specific sections summarized, please let me know!
