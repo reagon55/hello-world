@@ -88,3 +88,20 @@ public class JooqVoiceAIRepositoryImpl implements JooqVoiceAIRepository {
                 .fetchOneInto(VoiceAiEntity.class);
     }
 }
+
+public void updateVoiceAi(VoiceAiEntity voiceAiEntity) {
+        dsl.update(VOICE_AI)
+                .set(VOICE_AI.LGI_CUSTOMER_ID, voiceAiEntity.getCustomerId())
+                .set(VOICE_AI.COUNTRY, voiceAiEntity.getCountry())
+                .set(VOICE_AI.FILE_CONTENT, voiceAiEntity.getFileData())
+                .set(VOICE_AI.FILE_NAME, voiceAiEntity.getFileName())
+                .set(VOICE_AI.ENCODING, voiceAiEntity.getEncoding())
+                .set(VOICE_AI.SAMPLE_RATE, voiceAiEntity.getSampleRate())
+                .set(VOICE_AI.RESULT, voiceAiEntity.getResult())
+                .set(VOICE_AI.LLM_AUDIO_MAPPING, voiceAiEntity.getLlMAudioMapping())
+                .set(VOICE_AI.STATUS, voiceAiEntity.getStatus())
+                .set(VOICE_AI.ERROR_DESCRIPTION, voiceAiEntity.getErrorDescription())
+                .set(VOICE_AI.UPDATED_AT, voiceAiEntity.getUpdatedAt())
+                .where(VOICE_AI.ID.eq(voiceAiEntity.getId()))
+                .execute();
+    }
