@@ -1,0 +1,90 @@
+package com.lgi.msa.voiceai.repository;
+
+import com.lgi.msa.voiceai.entity.VoiceAiEntity;
+import java.sql.Timestamp;
+
+public interface JooqVoiceAIRepository {
+
+    void createVoiceAi(VoiceAiEntity voiceAiEntity);
+
+    void updateVoiceAiResult(Long id, String result, Timestamp updatedAt);
+
+    void updateVoiceAiLlmMapping(Long id, String llmAudioMapping, Timestamp updatedAt);
+
+    void updateVoiceAiStatus(Long id, String status, Timestamp updatedAt);
+
+    VoiceAiEntity findById(Long id);
+}
+
+
+// now its implementation
+
+package com.lgi.msa.voiceai.repository;
+
+import com.lgi.msa.voiceai.entity.VoiceAiEntity;
+import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import java.sql.Timestamp;
+
+import static com.lgi.msa.voiceai.jooq.Tables.VOICE_AI;
+
+@Repository
+public class JooqVoiceAIRepositoryImpl implements JooqVoiceAIRepository {
+
+    @Autowired
+    private DSLContext dsl;
+
+    @Override
+    public void createVoiceAi(VoiceAiEntity voiceAiEntity) {
+        dsl.insertInto(VOICE_AI)
+                .set(VOICE_AI.LGI_CUSTOMER_ID, voiceAiEntity.getCustomerId())
+                .set(VOICE_AI.COUNTRY, voiceAiEntity.getCountry())
+                .set(VOICE_AI.FILE_CONTENT, voiceAiEntity.getFileData())
+                .set(VOICE_AI.FILE_NAME, voiceAiEntity.getFileName())
+                .set(VOICE_AI.ENCODING, voiceAiEntity.getEncoding())
+                .set(VOICE_AI.SAMPLE_RATE, voiceAiEntity.getSampleRate())
+                .set(VOICE_AI.RESULT, voiceAiEntity.getResult())
+                .set(VOICE_AI.LLM_AUDIO_MAPPING, voiceAiEntity.getLlMAudioMapping())
+                .set(VOICE_AI.STATUS, voiceAiEntity.getStatus())
+                .set(VOICE_AI.ERROR_DESCRIPTION, voiceAiEntity.getErrorDescription())
+                .set(VOICE_AI.CREATED_AT, voiceAiEntity.getCreatedAt())
+                .set(VOICE_AI.UPDATED_AT, voiceAiEntity.getUpdatedAt())
+                .execute();
+    }
+
+    @Override
+    public void updateVoiceAiResult(Long id, String result, Timestamp updatedAt) {
+        dsl.update(VOICE_AI)
+                .set(VOICE_AI.RESULT, result)
+                .set(VOICE_AI.UPDATED_AT, updatedAt)
+                .where(VOICE_AI.ID.eq(id))
+                .execute();
+    }
+
+    @Override
+    public void updateVoiceAiLlmMapping(Long id, String llmAudioMapping, Timestamp updatedAt) {
+        dsl.update(VOICE_AI)
+                .set(VOICE_AI.LLM_AUDIO_MAPPING, llmAudioMapping)
+                .set(VOICE_AI.UPDATED_AT, updatedAt)
+                .where(VOICE_AI.ID.eq(id))
+                .execute();
+    }
+
+    @Override
+    public void updateVoiceAiStatus(Long id, String status, Timestamp updatedAt) {
+        dsl.update(VOICE_AI)
+                .set(VOICE_AI.STATUS, status)
+                .set(VOICE_AI.UPDATED_AT, updatedAt)
+                .where(VOICE_AI.ID.eq(id))
+                .execute();
+    }
+
+    @Override
+    public VoiceAiEntity findById(Long id) {
+        return dsl.selectFrom(VOICE_AI)
+                .where(VOICE_AI.ID.eq(id))
+                .fetchOneInto(VoiceAiEntity.class);
+    }
+}
