@@ -1,0 +1,64 @@
+split the code into two main parts as per the requirements:
+Updating new fields during ACS sync process
+POST wifi/one-wifi to update below fields after successful ACS SPV call
+1. Updating new fields during ACS sync process
+
+public void updateFieldsDuringAcsSync(boolean isLegacy, boolean networkEnabled, boolean radioEnabled, boolean plumeAgentEnabled, boolean zeroTouchEnabled) {
+    // Update network_enabled and radio_enabled fields in nodes table
+    if (isLegacy) {
+        // Legacy modem
+        updateNetworkAndRadioEnabled(true, "Device.WiFi.Network.Home.24.Enable", "Device.WiFi.Network.Home.50.Enable");
+    } else {
+        // Non-legacy modem
+        updateNetworkAndRadioEnabled(true, "Device.WiFi.Radio.24.Enable", "Device.WiFi.Radio.50.Enable");
+    }
+
+    // Update plume_agent_enabled and zero_touch_enabled fields in household table
+    updatePlumeAgentAndZeroTouchEnabled("Device.WiFi.Radio.Agent.SON.Enable", "ACS customerData --> zeroTouchEnabled");
+}
+
+private void updateNetworkAndRadioEnabled(boolean enabled, String legacyNode, String nonLegacyNode) {
+    // Logic to update network and radio enabled fields in nodes table
+    // ...
+    System.out.println("Network and Radio Enabled fields updated: " + enabled + ", LegacyNode: " + legacyNode + ", NonLegacyNode: " + nonLegacyNode);
+}
+
+private void updatePlumeAgentAndZeroTouchEnabled(String plumeAgentField, String zeroTouchField) {
+    // Logic to update plume_agent_enabled and zero_touch_enabled fields in household table
+    // ...
+    System.out.println("Plume Agent and Zero Touch fields updated: " + plumeAgentField + ", ZeroTouchField: " + zeroTouchField);
+}
+2. POST wifi/one-wifi to update below fields after successful ACS SPV call
+java
+Copy code
+public void postWifiOneWifiUpdate(boolean isLegacy, boolean plumeAgentEnabled) {
+    // Update network_enabled and radio_enabled fields in nodes table
+    updateNetworkAndRadioEnabledAfterAcsSpv(isLegacy);
+
+    // Update plume_agent_enabled and zero_touch_enabled fields in household table
+    updatePlumeAgentAndZeroTouchEnabledAfterAcsSpv(plumeAgentEnabled);
+}
+
+private void updateNetworkAndRadioEnabledAfterAcsSpv(boolean isLegacy) {
+    // Logic to update network_enabled and radio_enabled fields in nodes table
+    // ...
+    if (isLegacy) {
+        // Legacy modem
+        updateNetworkAndRadioEnabled(true, "Device.WiFi.Network.Home.24.Enable", "Device.WiFi.Network.Home.50.Enable");
+    } else {
+        // Non-legacy modem
+        updateNetworkAndRadioEnabled(true, "Device.WiFi.Radio.24.Enable", "Device.WiFi.Radio.50.Enable");
+    }
+}
+
+private void updatePlumeAgentAndZeroTouchEnabledAfterAcsSpv(boolean plumeAgentEnabled) {
+    // Logic to update plume_agent_enabled and zero_touch_enabled fields in household table
+    // ...
+    if (plumeAgentEnabled) {
+        // Set plumeAgentEnabled to true
+        updatePlumeAgentAndZeroTouchEnabled("true", "zeroTouchEnabled");
+    }
+}
+
+------------------
+This code defines methods to update the necessary fields during the ACS sync process and after a successful ACS SPV call. You can integrate these methods into your existing service or controller classes as needed. If you need more specific code or additional methods, please provide more details.
