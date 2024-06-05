@@ -1,0 +1,32 @@
+Unit test for IOException
+
+@Test
+@DisplayName("Should throw IOException when an IO error occurs")
+void testProcessAndRetrieveTranscription_IOException() throws InterruptedException, ExecutionException {
+    // Given
+    MockMultipartFile mockMultipartFile = new MockMultipartFile("audio", "ios_recording.flac", "audio/flac", new byte[0]);
+    when(transcriptionService.processAndRetrieveTranscription(any(), anyString(), anyInt()))
+            .thenThrow(IOException.class);
+
+    // When & Then
+    assertThrows(IOException.class, () -> {
+        transcriptionService.processAndRetrieveTranscription(mockMultipartFile, "flac", 44100);
+    });
+}
+
+
+Unit Test for InterruptedException
+
+@Test
+@DisplayName("Should throw InterruptedException when the process is interrupted")
+void testProcessAndRetrieveTranscription_InterruptedException() throws IOException, ExecutionException {
+    // Given
+    MockMultipartFile mockMultipartFile = new MockMultipartFile("audio", "ios_recording.flac", "audio/flac", new byte[0]);
+    when(transcriptionService.processAndRetrieveTranscription(any(), anyString(), anyInt()))
+            .thenThrow(InterruptedException.class);
+
+    // When & Then
+    assertThrows(InterruptedException.class, () -> {
+        transcriptionService.processAndRetrieveTranscription(mockMultipartFile, "flac", 44100);
+    });
+}
