@@ -1,0 +1,111 @@
+package com.lgi.voiceai.test.controller;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import com.lgi.msa.voiceai.VoiceAiApplication;
+import com.lgi.msa.voiceai.service.VoiceAiService;
+import com.lgi.msa.voiceai.model.VoiceaiDetails;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.HashMap;
+
+@SpringBootTest(classes = VoiceAiApplication.class)
+@AutoConfigureMockMvc
+public class VoiceAiControllerComponentTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private VoiceAiService voiceAiService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testProcessVoice_Success() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "test.wav",
+                MediaType.MULTIPART_FORM_DATA_VALUE,
+                "test data".getBytes()
+        );
+
+        VoiceaiDetails mockVoiceaiDetails = VoiceaiDetails.builder()
+                .aiResponseMap(new HashMap<>())  // populate with appropriate data if needed
+                .build();
+
+        when(voiceAiService.processVoice(
+                any(String.class), 
+                any(MultipartFile.class), 
+                any(String.class), 
+                any(String.class)
+        )).thenReturn(mockVoiceaiDetails);
+
+        mockMvc.perform(multipart("/voice-input")
+                .file(file)
+                .header("Authorization", "Bearer test-token")
+                .param("encoding", "flac")
+                .param("sampleRateHertz", "48000")
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk());
+                // Add additional expectations here, like jsonPath() if needed
+    }
+
+    @Test
+    public void testProcessVoice_Exception() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+            "file", "test.wav", MediaType.MULTIPART_FORM_DATA_VALUE, "test data".getBytes());
+
+        when(voiceAiService.processVoice(
+                any(String.class), 
+                any(MultipartFile.class), 
+                any(String.class), 
+                any(String.class)
+        )).thenThrow(new RuntimeException("Processing error"));
+
+        mockMvc.perform(multipart("/voice-input")
+                .file(file)
+                .header("Authorization", "Bearer test-token")
+                .param("encoding", "flac")
+                .param("sampleRateHertz", "48000")
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isInternalServerError())
+                .andExpect(result -> assertTrue(result.getResolvedException() instanceof RuntimeException))
+                .andExpect(result -> assertEquals("Processing error", result.getResolvedException().getMessage()));
+    }
+
+    @Test
+    public void testProcessVoice_BadRequest() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+            "file", "", MediaType.MULTIPART_FORM_DATA_VALUE, "".getBytes());
+
+        mockMvc.perform(multipart("/voice-input")
+                .file(file)
+                .header("Authorization", "Bearer test-token")
+                .param("encoding", "flac")
+                .param("sampleRateHertz", "0")
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("Invalid B004 in path (min 2 max 6 symbols)"))
+                .andExpect(jsonPath("$.error.statusCode").value(400));
+    }
+}
