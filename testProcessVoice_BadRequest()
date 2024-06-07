@@ -1,0 +1,13 @@
+@Test
+public void testProcessVoice_BadRequest() throws Exception {
+    MockMultipartFile file = new MockMultipartFile("file", "", "audio/wav", "".getBytes());
+    
+    mockMvc.perform(multipart("/voice")
+            .file(file)
+            .param("encoding", "")
+            .param("sampleRateHertz", "0")
+            .header("Authorization", "Bearer test-token")
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+            .andExpect(status().isBadRequest())
+            .andExpect(content().string("Invalid input parameters"));
+}
