@@ -1,0 +1,50 @@
+package com.lgi.voiceai.test.controller;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+
+import com.lgi.msa.voiceai.VoiceAiApplication;
+import com.lgi.msa.voiceai.service.VoiceAiService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MockMvc;
+
+@SpringBootTest(classes = VoiceAiApplication.class)
+@AutoConfigureMockMvc
+public class VoiceAiControllerComponentTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    private VoiceAiService voiceAiService;
+
+    @BeforeEach
+    void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void testProcessVoice_BadRequest() throws Exception {
+        MockMultipartFile file = new MockMultipartFile(
+            "file", "", MediaType.MULTIPART_FORM_DATA_VALUE, "".getBytes());
+
+        mockMvc.perform(multipart("/voice-input")
+                .file(file)
+                .header("Authorization", "Bearer test-token")
+                .param("encoding", "flac")
+                .param("sampleRateHertz", "0")
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.message").value("Invalid OpCo in path (min 2 max 6 symbols)"))
+                .andExpect(jsonPath("$.error.statusCode").value(400));
+    }
+}
