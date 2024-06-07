@@ -1,0 +1,15 @@
+@Test
+public void testProcessVoice_BadRequest() throws Exception {
+    MockMultipartFile file = new MockMultipartFile(
+        "file", "", MediaType.MULTIPART_FORM_DATA_VALUE, "".getBytes());
+
+    mockMvc.perform(multipart("/voice-input")
+            .file(file)
+            .header("Authorization", "Bearer test-token")
+            .param("encoding", "flac")
+            .param("sampleRateHertz", "0")
+            .contentType(MediaType.MULTIPART_FORM_DATA))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.error.message").value("Invalid B004 in path (min 2 max 6 symbols)"))
+            .andExpect(jsonPath("$.error.statusCode").value(400));
+}
