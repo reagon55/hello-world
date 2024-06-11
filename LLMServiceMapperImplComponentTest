@@ -1,0 +1,48 @@
+package com.lgi.voiceai.test.infrastructure;
+
+import com.lgi.voiceai.service.impl.LLMServiceMapperImpl;
+import com.lgi.voiceai.service.DeviceClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+@SpringBootTest
+public class LLMServiceMapperImplComponentTest extends AbstractComponentTest {
+
+    @Autowired
+    private LLMServiceMapperImpl llmServiceMapper;
+
+    @MockBean
+    private DeviceClient deviceClient;
+
+    @BeforeEach
+    public void setUp() {
+        // Set up mock behavior
+        when(deviceClient.getDevices(anyString(), anyString())).thenReturn("mocked device list");
+    }
+
+    @Test
+    public void testShowConnectedDevices() {
+        // Arrange
+        String usecase = "SHOW_CONNECTED_DEVICES";
+        String generatedToken = "someToken";
+        String opCoValue = "someOpCoValue";
+
+        // Act
+        Map<String, Object> result = llmServiceMapper.llmUsecaseService(usecase, generatedToken, opCoValue);
+
+        // Assert
+        assertThat(result).isNotNull();
+        assertThat(result.get(usecase)).isEqualTo("mocked device list");
+
+        // Verify the interaction with the mock
+        verify(deviceClient).getDevices(generatedToken, opCoValue);
+    }
+}
