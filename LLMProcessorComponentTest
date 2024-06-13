@@ -1,0 +1,138 @@
+package com.lgi.awsai_connector.test.Infrastructure;
+
+import com.lgi.awsai_connector.LLMProcessor;
+import com.lgi.awsai_connector.TranscriptionService;
+import org.json.JSONArray;
+import org.json.JSONObject;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.transcribestreaming.TranscribeStreamingAsyncClient;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+@ExtendWith(MockitoExtension.class)
+public class LLMProcessorComponentTest {
+
+    @Mock
+    private AwsProperties awsProperties; // Mock your AWS properties
+
+    @InjectMocks
+    private BedrockServiceImpl bedrockService;
+
+    @Mock
+    private MultipartFile audioFile;
+
+    @Mock
+    private TranscribeStreamingAsyncClient client;
+
+    @BeforeEach
+    void setUp() {
+        // Set up your mocks and stubs here
+        org.mockito.Mockito.when(awsProperties.getAccessKeyId()).thenReturn("your-access-key-id");
+        org.mockito.Mockito.when(awsProperties.getSecretKey()).thenReturn("your-secret-key");
+    }
+
+    @Test
+    void testSendTranscriptToBedrockSuccess() throws Exception {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.complete("Transcription text");
+
+        // Mock the behavior of TranscribeStreamingAsyncClient
+        org.mockito.Mockito.when(client.startStreamTranscription(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            // Simulate transcription process and complete the future
+            future.complete("Transcription text");
+            return null;
+        });
+
+        // Act
+        Transcript result = transcriptionService.processAndRetrieveTranscription(audioFile, "mp3", "44100");
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertEquals("Transcription text", result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockIOException() {
+        // Arrange
+        org.mockito.Mockito.when(client.startStreamTranscription(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenThrow(IOException.class);
+
+        // Act
+        Transcript result = transcriptionService.processAndRetrieveTranscription(audioFile, "mp3", "44100");
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockInterruptedException() throws Exception {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new InterruptedException());
+
+        // Simulate the future getting completed exceptionally
+        org.mockito.Mockito.when(client.startStreamTranscription(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            future.completeExceptionally(new InterruptedException());
+            return null;
+        });
+
+        // Act
+        Transcript result = transcriptionService.processAndRetrieveTranscription(audioFile, "mp3", "44100");
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockExecutionException() throws Exception {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new ExecutionException(new Throwable()));
+
+        // Simulate the future getting completed exceptionally
+        org.mockito.Mockito.when(client.startStreamTranscription(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            future.completeExceptionally(new ExecutionException(new Throwable()));
+            return null;
+        });
+
+        // Act
+        Transcript result = transcriptionService.processAndRetrieveTranscription(audioFile, "mp3", "44100");
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockException() {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new RuntimeException());
+
+        // Simulate the future getting completed exceptionally
+        org.mockito.Mockito.when(client.startStreamTranscription(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenAnswer(invocation -> {
+            future.completeExceptionally(new RuntimeException());
+            return null;
+        });
+
+        // Act
+        Transcript result = transcriptionService.processAndRetrieveTranscription(audioFile, "mp3", "44100");
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertNotNull(result);
+        org.junit.jupiter.api.Assertions.assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+}
