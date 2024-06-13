@@ -1,0 +1,79 @@
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+public class AwsAiConnectorControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Mock
+    private TranscriptionService transcriptionService;
+
+    @Mock
+    private BedrockService bedrockService;
+
+    @InjectMocks
+    private AwsAiConnectorController awsAiConnectorController;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.openMocks(this);
+        this.mockMvc = MockMvcBuilders.standaloneSetup(awsAiConnectorController).build();
+    }
+
+    @Test
+    public void testTranscribeFile() throws Exception {
+        // Mock the service method
+        when(transcriptionService.processAndRetrieveTranscription(any(), any(), any()))
+                .thenReturn(new Transcript("mocked transcript"));
+
+        // Simulate a file upload without attaching a real file
+        MockMultipartFile file = new MockMultipartFile("file", "test.flac", MediaType.MULTIPART_FORM_DATA_VALUE, "test data".getBytes());
+
+        mockMvc.perform(multipart("/transcribe")
+                .file(file)
+                .param("encoding", "flac")
+                .param("sampleRateHertz", "48000")
+                .header("Authorization", "Bearer token")
+                .contentType(MediaType.MULTIPART_FORM_DATA))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.transcript").value("mocked transcript"));
+    }
+
+    @Test
+    public void testProcessTranscript() throws Exception {
+        // Mock the service method
+        when(bedrockService.sendTranscriptToBedrock(any())).thenReturn(new LLMProcessor("mocked processed text"));
+
+        // Create a mock request body
+        String transcriptJson = "{ \"text\": \"test transcript\" }";
+
+        mockMvc.perform(post("/llm-processor")
+                .header("Authorization", "Bearer token")
+                .content(transcriptJson)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.processedText").value("mocked processed text"));
+    }
+}
