@@ -1,0 +1,165 @@
+To convert your HazelcastFactory class from an embedded model to a client-server model in Hazelcast, you need to modify the configuration to connect to an external Hazelcast server instead of running an instance within your application. Here’s how you can achieve this:
+
+Original HazelcastFactory Class (Embedded Model)
+java
+Copy code
+package com.lgi.msa.scheduler.hazelcast;
+
+import com.hazelcast.config.*;
+import com.hazelcast.core.Hazelcast;
+import com.hazelcast.core.HazelcastInstance;
+import com.lgi.msa.scheduler.component.command.IdentifyExpiredTasksCommand;
+import com.lgi.msa.scheduler.component.command.SendTaskCommand;
+import com.lgi.msa.scheduler.component.notifier.Notifier;
+import com.lgi.msa.scheduler.core.dao.TaskDao;
+import com.lgi.msa.scheduler.core.managed.TaskMessageProducer;
+import com.lgi.msa.scheduler.core.managed.TaskSchedulerManager;
+import io.dropwizard.setup.Environment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Properties;
+
+public class HazelcastFactory extends Duration {
+
+    private static final String DEFAULT_INITIAL_WAIT_SECONDS = "30";
+    private static final Logger LOG = LoggerFactory.getLogger(HazelcastFactory.class);
+
+    public HazelcastInstance build(Environment env, TaskDao taskDao, TaskMessageProducer producer, TaskSchedulerManager schedulerTaskManager, Notifier notifier) {
+        LOG.info("Going to build Hazelcast instance");
+
+        final HazelcastInstance hazelcast = build(new ManagedContext() {
+            @Override
+            public Object initialize(Object obj) {
+                if (obj instanceof SendTaskCommand) {
+                    final SendTaskCommand command = (SendTaskCommand) obj;
+                    command.setTaskDao(taskDao);
+                    command.setProducer(producer);
+                } else if (obj instanceof IdentifyExpiredTasksCommand) {
+                    final IdentifyExpiredTasksCommand command = (IdentifyExpiredTasksCommand) obj;
+                    command.setTaskDao(taskDao);
+                    command.setNotifier(notifier);
+                }
+                return obj;
+            }
+        });
+
+        LOG.info("Hazelcast instance was successfully built");
+
+        env.healthChecks().register("hazelcast", new HazelcastHealthCheck(hazelcast));
+        return hazelcast;
+    }
+
+    private HazelcastInstance build(ManagedContext managedContext) {
+        final HazelcastInstance hazelcast = Hazelcast.newHazelcastInstance(createConfig(managedContext));
+        LOG.info("Hazelcast instance: starting");
+        return hazelcast;
+    }
+
+    private Config createConfig(ManagedContext managedContext) {
+        final Config config = new ClasspathXmlConfig("hazelcast.xml");
+
+        Properties properties = new Properties();
+        properties.setProperty("hazelcast.shutdownhook.enabled", "false");
+        properties.setProperty("hazelcast.shutdownhook.policy", "GRACEFUL");
+        properties.setProperty("hazelcast.initial.wait.seconds", DEFAULT_INITIAL_WAIT_SECONDS);
+        config.setManagedContext(managedContext);
+        config.setProperties(properties);
+
+        config.getNetworkConfig().setPort(5701).setPortAutoIncrement(false);
+        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
+        config.getNetworkConfig().getJoin().getTcpIpConfig().setEnabled(false);
+
+        return config;
+    }
+}
+Modified HazelcastFactory Class (Client-Server Model)
+Use Client Config: Modify the configuration to use ClientConfig instead of Config.
+Set Network Configuration: Specify the addresses of the Hazelcast servers to connect to.
+Here’s the modified class:
+
+java
+Copy code
+package com.lgi.msa.scheduler.hazelcast;
+
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.lgi.msa.scheduler.component.command.IdentifyExpiredTasksCommand;
+import com.lgi.msa.scheduler.component.command.SendTaskCommand;
+import com.lgi.msa.scheduler.component.notifier.Notifier;
+import com.lgi.msa.scheduler.core.dao.TaskDao;
+import com.lgi.msa.scheduler.core.managed.TaskMessageProducer;
+import com.lgi.msa.scheduler.core.managed.TaskSchedulerManager;
+import io.dropwizard.setup.Environment;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.time.Duration;
+
+public class HazelcastFactory extends Duration {
+
+    private static final String DEFAULT_INITIAL_WAIT_SECONDS = "30";
+    private static final Logger LOG = LoggerFactory.getLogger(HazelcastFactory.class);
+
+    public HazelcastInstance build(Environment env, TaskDao taskDao, TaskMessageProducer producer, TaskSchedulerManager schedulerTaskManager, Notifier notifier) {
+        LOG.info("Going to build Hazelcast instance");
+
+        final HazelcastInstance hazelcast = build(new ManagedContext() {
+            @Override
+            public Object initialize(Object obj) {
+                if (obj instanceof SendTaskCommand) {
+                    final SendTaskCommand command = (SendTaskCommand) obj;
+                    command.setTaskDao(taskDao);
+                    command.setProducer(producer);
+                } else if (obj instanceof IdentifyExpiredTasksCommand) {
+                    final IdentifyExpiredTasksCommand command = (IdentifyExpiredTasksCommand) obj;
+                    command.setTaskDao(taskDao);
+                    command.setNotifier(notifier);
+                }
+                return obj;
+            }
+        });
+
+        LOG.info("Hazelcast instance was successfully built");
+
+        env.healthChecks().register("hazelcast", new HazelcastHealthCheck(hazelcast));
+        return hazelcast;
+    }
+
+    private HazelcastInstance build(ManagedContext managedContext) {
+        final HazelcastInstance hazelcast = HazelcastClient.newHazelcastClient(createClientConfig(managedContext));
+        LOG.info("Hazelcast client instance: starting");
+        return hazelcast;
+    }
+
+    private ClientConfig createClientConfig(ManagedContext managedContext) {
+        ClientConfig clientConfig = new ClientConfig();
+        ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
+
+        networkConfig.addAddress("hazelcast-server-address-1", "hazelcast-server-address-2"); // Replace with actual server addresses
+        networkConfig.setSmartRouting(true);
+        networkConfig.setRedoOperation(true);
+        networkConfig.setConnectionAttemptLimit(5);
+        networkConfig.setConnectionAttemptPeriod(5000);
+        networkConfig.setConnectionTimeout(15000);
+
+        clientConfig.setManagedContext(managedContext);
+
+        return clientConfig;
+    }
+}
+Key Changes:
+Switch to ClientConfig: Use ClientConfig instead of Config to set up the Hazelcast client.
+Set Server Addresses: Configure the network settings to specify the addresses of the Hazelcast servers you want to connect to.
+Modify Initialization: Ensure that the client is initialized properly with the server addresses and any required settings.
+This conversion should set up your application to connect to an external Hazelcast server using the client-server model. Ensure the server addresses and other configurations are correct and match your deployment.
+
+
+
+
+
+
