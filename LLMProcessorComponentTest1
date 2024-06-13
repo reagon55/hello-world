@@ -1,0 +1,138 @@
+package com.lgi.awsai_connector.test.Infrastructure;
+
+import com.lgi.awsai_connector.BedrockServiceImpl;
+import com.lgi.awsai_connector.Transcript;
+import com.lgi.awsai_connector.Constants;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.transcribestreaming.TranscribeStreamingAsyncClient;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+
+@ExtendWith(MockitoExtension.class)
+public class LLMProcessorComponentTest {
+
+    @InjectMocks
+    private BedrockServiceImpl bedrockService;
+
+    @Mock
+    private MultipartFile audioFile;
+
+    @Mock
+    private TranscribeStreamingAsyncClient client;
+
+    private AwsBasicCredentials awsCredentials;
+
+    @BeforeEach
+    void setUp() {
+        // Set up AWS credentials
+        awsCredentials = AwsBasicCredentials.create("your-access-key-id", "your-secret-key");
+
+        // Set up your mocks and stubs here
+        when(client.startStreamTranscription(any(), any(), any())).thenReturn(null);
+    }
+
+    @Test
+    void testSendTranscriptToBedrockSuccess() throws Exception {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.complete("Transcription text");
+
+        // Mock the behavior of TranscribeStreamingAsyncClient
+        when(client.startStreamTranscription(any(), any(), any())).thenAnswer(invocation -> {
+            // Simulate transcription process and complete the future
+            future.complete("Transcription text");
+            return null;
+        });
+
+        // Act
+        Transcript result = bedrockService.sendTranscriptToBedrock(new Transcript("Sample transcript text"));
+
+        // Assert
+        assertNotNull(result);
+        assertEquals("Transcription text", result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockIOException() {
+        // Arrange
+        when(client.startStreamTranscription(any(), any(), any())).thenThrow(IOException.class);
+
+        // Act
+        Transcript result = bedrockService.sendTranscriptToBedrock(new Transcript("Sample transcript text"));
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockInterruptedException() throws Exception {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new InterruptedException());
+
+        // Simulate the future getting completed exceptionally
+        when(client.startStreamTranscription(any(), any(), any())).thenAnswer(invocation -> {
+            future.completeExceptionally(new InterruptedException());
+            return null;
+        });
+
+        // Act
+        Transcript result = bedrockService.sendTranscriptToBedrock(new Transcript("Sample transcript text"));
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockExecutionException() throws Exception {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new ExecutionException(new Throwable()));
+
+        // Simulate the future getting completed exceptionally
+        when(client.startStreamTranscription(any(), any(), any())).thenAnswer(invocation -> {
+            future.completeExceptionally(new ExecutionException(new Throwable()));
+            return null;
+        });
+
+        // Act
+        Transcript result = bedrockService.sendTranscriptToBedrock(new Transcript("Sample transcript text"));
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+
+    @Test
+    void testSendTranscriptToBedrockException() {
+        // Arrange
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.completeExceptionally(new RuntimeException());
+
+        // Simulate the future getting completed exceptionally
+        when(client.startStreamTranscription(any(), any(), any())).thenAnswer(invocation -> {
+            future.completeExceptionally(new RuntimeException());
+            return null;
+        });
+
+        // Act
+        Transcript result = bedrockService.sendTranscriptToBedrock(new Transcript("Sample transcript text"));
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(Constants.STT_FAILURE, result.getText());
+    }
+}
