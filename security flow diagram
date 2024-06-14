@@ -1,0 +1,49 @@
+To create a flow or sequence diagram based on the API code shared in the images, let's break down the key steps involved in the API method and then translate those into a visual diagram.
+
+Steps from the API Method:
+Authorization and Token Extraction:
+
+The method starts by extracting the authorizationHeader.
+It validates the token and retrieves IgiCustomerId.
+Security Processing Service:
+
+The method calls securityProcessingService.getFirewall.
+Handling Different Sync Approaches:
+
+Depending on the approachType, it might handle the firewall data retrieval asynchronously or synchronously.
+Various sync approaches include DB_ASYNC, TRACKER_ASYNC, and FULL_SYNC.
+Firewall Data Retrieval:
+
+The method retrieves firewall data either from the ACS (Access Control Service) or the database.
+Building the Response:
+
+The response is built and returned.
+Sequence Diagram Representation:
+Client sends a request to API Gateway.
+API Gateway forwards the request to FirewallController.
+FirewallController extracts the token and validates it using JwtUtils.
+FirewallController calls SecurityProcessingService to get firewall data.
+SecurityProcessingService decides the approach (DB_ASYNC, TRACKER_ASYNC, FULL_SYNC) based on the last refresh and other parameters.
+SecurityProcessingService may interact with ACS Connector Service or Database based on the sync approach.
+FirewallController builds the response and sends it back to API Gateway.
+API Gateway returns the response to Client.
+Sequence Diagram:
+I will create a sequence diagram based on the described steps. Please wait while I generate the diagram.
+
+Sequence Diagram Creation
+I'll now use a diagramming tool to create the sequence diagram.
+
+Sequence Diagram For Firewall API
+
+
+
+
+by
+for
+,
+,
+,
+,
+,
+, and
+Here's the sequence diagram for the Firewall API based on the steps provided in the code. This diagram illustrates the interaction between the different components during the API call. If you need any modifications or further details, please let me know! ​
