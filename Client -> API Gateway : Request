@@ -1,0 +1,62 @@
+It looks like the sequence diagram needs some clarification and correction. Let's revisit the sequence diagram creation steps in a structured manner.
+
+Detailed Steps of the API:
+Client sends a request to the API Gateway.
+API Gateway forwards the request to the FirewallController.
+FirewallController extracts and validates the token using JwtUtils.
+FirewallController calls the SecurityProcessingService to get firewall data.
+SecurityProcessingService decides the approach (DB_ASYNC, TRACKER_ASYNC, FULL_SYNC) based on the last refresh and other parameters.
+SecurityProcessingService interacts with ACS Connector Service or Database based on the sync approach.
+SecurityProcessingService returns the data to the FirewallController.
+FirewallController builds the response.
+FirewallController sends the response back to the API Gateway.
+API Gateway returns the response to the Client.
+Corrected Sequence Diagram:
+plaintext
+Copy code
+Client -> API Gateway : Request
+API Gateway -> FirewallController : Forward Request
+FirewallController -> JwtUtils : Extract & Validate Token
+FirewallController -> SecurityProcessingService : Get Firewall Data
+SecurityProcessingService -> ACS Connector Service : Decide Sync Approach
+ACS Connector Service -> Database : Fetch Data
+Database -> ACS Connector Service : Return Data
+ACS Connector Service -> SecurityProcessingService : Return Data
+SecurityProcessingService -> FirewallController : Return Data
+FirewallController -> API Gateway : Build Response
+API Gateway -> Client : Return Response
+Creating the Corrected Sequence Diagram
+I'll now generate a corrected and more readable sequence diagram.
+
+Corrected Detailed Sequence Diagram For Firewall API
+
+
+
+
+by
+for
+,
+,
+,
+,
+,
+, and
+Here is the corrected and detailed sequence diagram for the Firewall API. This diagram should now clearly depict the interactions between the different components involved in the API call process:
+
+Client sends a request to the API Gateway.
+API Gateway forwards the request to the FirewallController.
+FirewallController extracts and validates the token using JwtUtils.
+FirewallController calls the SecurityProcessingService to get firewall data.
+SecurityProcessingService decides the approach (DB_ASYNC, TRACKER_ASYNC, FULL_SYNC) based on the last refresh and other parameters.
+SecurityProcessingService interacts with ACS Connector Service or Database based on the sync approach.
+SecurityProcessingService returns the data to the FirewallController.
+FirewallController builds the response.
+FirewallController sends the response back to the API Gateway.
+API Gateway returns the response to the Client.
+If you need further modifications or additional details, please let me know! ​​
+
+
+
+
+
+
