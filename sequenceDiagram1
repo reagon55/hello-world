@@ -1,0 +1,20 @@
+sequenceDiagram
+    participant User
+    participant Controller
+    participant ServiceLayer
+    participant TrackerService
+    participant SecurityPatchService
+
+    User ->> Controller: PATCH /firewall
+    Controller ->> Controller: Extract token from authorizationHeader
+    Controller ->> Controller: Get customer ID using token
+    Controller ->> Controller: Validate token for country
+    Controller ->> ServiceLayer: patchFirewall()
+    ServiceLayer ->> TrackerService: trackerAsyncPatchFirewall()
+    TrackerService ->> TrackerService: Build tracker request
+    TrackerService ->> TrackerService: Create tracker
+    TrackerService ->> TrackerService: Manage and log events
+    TrackerService ->> TrackerService: Send appropriate responses
+    TrackerService ->> ServiceLayer: Return tracker link
+    ServiceLayer ->> Controller: Return response link
+    Controller ->> User: Response accepted with link
