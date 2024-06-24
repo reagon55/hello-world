@@ -1,0 +1,62 @@
+package com.lgi.msa.voiceai.service.impl;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.lgi.msa.voiceai.client.DeviceClient;
+import com.lgi.msa.voiceai.service.WiFiClient;
+import com.lgi.msa.voiceai.service.WiFiService;
+import com.lgi.msa.voiceai.service.mapper.LLMServiceMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class LLMServiceMapperImpl implements LLMServiceMapper {
+
+    @Autowired
+    private DeviceClient deviceClient;
+
+    @Autowired
+    private WiFiClient wifiClient;
+
+    @Autowired
+    private WiFiService wifiService;
+
+    @Override
+    public Map<String, Object> llmUsecaseService(LLMProcessor llmMapping, String generatedToken, String opCoValue) {
+        Map<String, Object> aiResponseMap = new HashMap<>();
+
+        switch (llmMapping.getUsecase().toUpperCase()) {
+            case Constants.SHOW_CONNECTED_DEVICES -> {
+                DeviceResponse response = deviceClient.getDevices(generatedToken, opCoValue);
+                if (response != null && response.getDevice() != null) {
+                    Map<String, Object> deviceMap = filterDeviceResponses(llmMapping, response.getDevice());
+                    aiResponseMap.put(llmMapping.getUsecase(), deviceMap);
+                } else {
+                    aiResponseMap.put(llmMapping.getUsecase(), response);
+                }
+            }
+            case Constants.SHARE_GUEST_WIFI -> {
+                JsonNode response = wifiClient.getWiFiCredentials(generatedToken, opCoValue, true);
+                JsonNode filteredResponse = wifiService.filterWiFiResponse(response.get("wifi"), "guest");
+                aiResponseMap.put(llmMapping.getUsecase(), filteredResponse);
+            }
+            case Constants.SHARE_WIFI_CREDENTIALS -> {
+                JsonNode response = wifiClient.getWiFiCredentials(generatedToken, opCoValue, true);
+                JsonNode filteredResponse = wifiService.filterWiFiResponse(response.get("wifi"), "home");
+                aiResponseMap.put(llmMapping.getUsecase(), filteredResponse);
+            }
+            default -> aiResponseMap.put(llmMapping.getUsecase(), Constants.MSA_JARVIS_UNSUPPORTED_REQUESTS_MESSAGE);
+        }
+        return aiResponseMap;
+    }
+
+    private Map<String, Object> filterDeviceResponses(LLMProcessor llmMapping, Object res) {
+        Map<String, Object> deviceMap = new HashMap<>();
+        if (llmMapping.getParameters() != null && !llmMapping.getParameters().isEmpty()) {
+            // Add logic for filtering device responses based on the parameters from llmMapping
+        }
+        return deviceMap;
+    }
+}
