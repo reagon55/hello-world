@@ -1,0 +1,61 @@
+package com.lgi.msa.voiceai.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgi.msa.voiceai.client.WiFiServiceClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
+
+public class DeviceClientTest {
+
+    @Mock
+    private WiFiServiceClient wifiServiceClient;
+
+    @InjectMocks
+    private DeviceClient deviceClient;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    private String homeNetworkResponse;
+    private String guestNetworkResponse;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        MockitoAnnotations.openMocks(this);
+        deviceClient = new DeviceClient();
+
+        // Example JSON responses for home and guest networks
+        homeNetworkResponse = "{ \"network\": \"home\", \"ssid\": \"HomeSSID\", \"passphrase\": \"HomePass\" }";
+        guestNetworkResponse = "{ \"network\": \"guest\", \"ssid\": \"GuestSSID\", \"passphrase\": \"GuestPass\" }";
+    }
+
+    @Test
+    public void testFilterHomeWiFiResponse() throws Exception {
+        when(wifiServiceClient.getWiFiCredentials(true)).thenReturn(homeNetworkResponse);
+        String response = wifiServiceClient.getWiFiCredentials(true);
+        Object filteredResponse = deviceClient.filterWiFiResponse(response, "home");
+
+        assertNotNull(filteredResponse);
+        Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
+        assertEquals("home", responseMap.get("network"));
+    }
+
+    @Test
+    public void testFilterGuestWiFiResponse() throws Exception {
+        when(wifiServiceClient.getWiFiCredentials(true)).thenReturn(guestNetworkResponse);
+        String response = wifiServiceClient.getWiFiCredentials(true);
+        Object filteredResponse = deviceClient.filterWiFiResponse(response, "guest");
+
+        assertNotNull(filteredResponse);
+        Map<String, Object> responseMap = objectMapper.readValue(response, Map.class);
+        assertEquals("guest", responseMap.get("network"));
+    }
+}
