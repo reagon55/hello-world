@@ -1,0 +1,160 @@
+Based on the existing DeviceClient class you shared, it appears that you're using Feign client to make HTTP requests. We will extend this class to include methods for fetching and filtering Wi-Fi credentials. Here's how to modify your DeviceClient class:
+
+Step 1: Define the Feign Client for Wi-Fi Service
+First, ensure you have a Feign client interface to interact with the Wi-Fi service API.
+
+java
+Copy code
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@FeignClient(name = "wifiServiceClient", url = "${wifi.service.url
+Let's create a Feign client interface to interact with the Wi-Fi service API and update the DeviceClient class accordingly.
+
+Step 1: Define the Feign Client for Wi-Fi Service
+Create a Feign client interface to interact with the Wi-Fi service API:
+
+java
+Copy code
+import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+@FeignClient(name = "wifiServiceClient", url = "${wifi.service.url}")
+public interface WiFiServiceClient {
+
+    @GetMapping("/wifi")
+    String getWiFiCredentials(@RequestParam("with-passphrase") boolean withPassphrase);
+}
+Step 2: Update DeviceClient Class
+Extend your existing DeviceClient class to include methods for fetching and filtering Wi-Fi credentials:
+
+java
+Copy code
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.io.IOException;
+import java.util.Map;
+
+@Service
+public class DeviceClient {
+
+    @Autowired
+    private DeviceFeignClient deviceFeignClient;
+
+    @Autowired
+    private WiFiServiceClient wifiServiceClient;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    public Object getDevices(String accessToken, String opCo) {
+        var response = deviceFeignClient.getDevices(accessToken, opCo);
+        return response;
+    }
+
+    public String getWiFiCredentials(boolean withPassphrase) {
+        return wifiServiceClient.getWiFiCredentials(withPassphrase);
+    }
+
+    public Object filterWiFiResponse(String response, String type) {
+        Map<String, Object> responseMap = parseResponse(response);
+        if ("main".equals(type)) {
+            return responseMap.get("mainWiFi");
+        } else if ("guest".equals(type)) {
+            return responseMap.get("guestWiFi");
+        }
+        return null;
+    }
+
+    private Map<String, Object> parseResponse(String response) {
+        try {
+            return objectMapper.readValue(response, new TypeReference<>() {});
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+}
+Step 3: Update LLMServiceMapperImpl Class
+Update LLMServiceMapperImpl to handle new use cases:
+
+java
+Copy code
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Service
+public class LLMServiceMapperImpl implements LLMServiceMapper {
+
+    @Autowired
+    private DeviceClient deviceClient;
+
+    @Override
+    public Map<String, Object> llmUsecaseService(String usecase, String generatedToken, String opCoValue) {
+        Map<String, Object> aiResponseMap = new HashMap<>();
+        switch (usecase.toUpperCase()) {
+            case Constants.SHOW_CONNECTED_DEVICES -> {
+                Object response = deviceClient.getDevices(generatedToken, opCoValue);
+                aiResponseMap.put(usecase, response);
+            }
+            case Constants.SHARE_WIFI_CREDENTIALS -> {
+                String response = deviceClient.getWiFiCredentials(true);
+                Object filteredResponse = deviceClient.filterWiFiResponse(response, "main");
+                aiResponseMap.put(usecase, filteredResponse);
+            }
+            case Constants.SHARE_GUEST_WIFI -> {
+                String response = deviceClient.getWiFiCredentials(true);
+                Object filteredResponse = deviceClient.filterWiFiResponse(response, "guest");
+                aiResponseMap.put(usecase, filteredResponse);
+            }
+            default -> aiResponseMap.put(usecase, Constants.MSA_JARVIS_UNSUPPORTED_REQUESTS_MESSAGE);
+        }
+        return aiResponseMap;
+    }
+}
+Step 4: Configuration
+Ensure you have the Wi-Fi service URL configured in your application.yaml:
+
+yaml
+Copy code
+wifi:
+  service:
+    url: "http://your-wifi-service-api-endpoint"
+Step 5: Test the Implementation
+Write unit tests and integration tests to validate the functionality:
+
+java
+Copy code
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+public class LLMServiceMapperImplTest {
+
+    @Autowired
+    private LLMServiceMapperImpl llmServiceMapper;
+
+    @Test
+    public void testShareWiFiCredentials() {
+        Map<String, Object> response = llmServiceMapper.llmUsecaseService(Constants.SHARE_WIFI_CREDENTIALS, "token", "opCo");
+        assertNotNull(response);
+        assertTrue(response.containsKey(Constants.SHARE_WIFI_CREDENTIALS));
+    }
+
+    @Test
+    public void testShareGuestWiFi() {
+        Map<String, Object> response = llmServiceMapper.llmUsecaseService(Constants.SHARE_GUEST_WIFI, "token", "opCo");
+        assertNotNull(response);
+        assertTrue(response.containsKey(Constants.SHARE_GUEST_WIFI));
+    }
+}
+By following these steps, you will have a complete implementation that fetches Wi-Fi details from the Wi-Fi service API and filters the response to distinguish between main and guest Wi-Fi networks. If you need further assistance or clarification on any of these steps, feel free to ask!
