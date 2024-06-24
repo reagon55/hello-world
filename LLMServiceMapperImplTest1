@@ -1,0 +1,76 @@
+package com.lgi.msa.voiceai.service.impl;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lgi.msa.voiceai.client.WiFiClient;
+import com.lgi.msa.voiceai.service.WiFiService;
+import com.lgi.msa.voiceai.util.Constants;
+import com.lgi.msa.voiceai.util.LLMProcessor;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class LLMServiceMapperImplTest {
+
+    @Mock
+    private WiFiClient wifiClient;
+
+    @Mock
+    private WiFiService wifiService;
+
+    @InjectMocks
+    private LLMServiceMapperImpl llmServiceMapper;
+
+    private String generatedToken = "test-token";
+    private String opCoValue = "test-opco";
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    public void setUp() {
+        objectMapper = new ObjectMapper();
+    }
+
+    @Test
+    public void testLlmUsecaseService_ShareWiFiCredentials() throws Exception {
+        LLMProcessor llmMapping = mock(LLMProcessor.class);
+        when(llmMapping.getUsecase()).thenReturn(Constants.SHARE_WIFI_CREDENTIALS);
+
+        String json = "{ \"wifi\": [{\"network\": \"home\", \"ssid\": \"HomeSSID\"}, {\"network\": \"guest\", \"ssid\": \"GuestSSID\"}] }";
+        JsonNode response = objectMapper.readTree(json);
+
+        when(wifiClient.getWiFiCredentials(generatedToken, opCoValue, true)).thenReturn(response);
+        when(wifiService.filterWiFiResponse(response.get("wifi"), "home")).thenReturn(response.get("wifi").get(0));
+
+        Map<String, Object> result = llmServiceMapper.llmUsecaseService(llmMapping, generatedToken, opCoValue);
+
+        assertNotNull(result);
+        assertEquals(response.get("wifi").get(0), result.get(Constants.SHARE_WIFI_CREDENTIALS));
+    }
+
+    @Test
+    public void testLlmUsecaseService_ShareGuestWiFi() throws Exception {
+        LLMProcessor llmMapping = mock(LLMProcessor.class);
+        when(llmMapping.getUsecase()).thenReturn(Constants.SHARE_GUEST_WIFI);
+
+        String json = "{ \"wifi\": [{\"network\": \"home\", \"ssid\": \"HomeSSID\"}, {\"network\": \"guest\", \"ssid\": \"GuestSSID\"}] }";
+        JsonNode response = objectMapper.readTree(json);
+
+        when(wifiClient.getWiFiCredentials(generatedToken, opCoValue, true)).thenReturn(response);
+        when(wifiService.filterWiFiResponse(response.get("wifi"), "guest")).thenReturn(response.get("wifi").get(1));
+
+        Map<String, Object> result = llmServiceMapper.llmUsecaseService(llmMapping, generatedToken, opCoValue);
+
+        assertNotNull(result);
+        assertEquals(response.get("wifi").get(1), result.get(Constants.SHARE_GUEST_WIFI));
+    }
+}
