@@ -1,0 +1,54 @@
+package com.lgi.msa.voiceai.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+public class WiFiServiceTest {
+
+    private WiFiService wifiService;
+    private ObjectMapper objectMapper;
+
+    @BeforeEach
+    public void setUp() {
+        wifiService = new WiFiService();
+        objectMapper = new ObjectMapper();
+    }
+
+    @Test
+    public void testFilterWiFiResponse_HomeNetwork() throws Exception {
+        String json = "{ \"wifi\": [{\"network\": \"home\", \"ssid\": \"HomeSSID\"}, {\"network\": \"guest\", \"ssid\": \"GuestSSID\"}] }";
+        JsonNode networks = objectMapper.readTree(json).get("wifi");
+
+        JsonNode filteredResponse = wifiService.filterWiFiResponse(networks, "home");
+
+        assertNotNull(filteredResponse);
+        assertEquals("HomeSSID", filteredResponse.get("ssid").asText());
+    }
+
+    @Test
+    public void testFilterWiFiResponse_GuestNetwork() throws Exception {
+        String json = "{ \"wifi\": [{\"network\": \"home\", \"ssid\": \"HomeSSID\"}, {\"network\": \"guest\", \"ssid\": \"GuestSSID\"}] }";
+        JsonNode networks = objectMapper.readTree(json).get("wifi");
+
+        JsonNode filteredResponse = wifiService.filterWiFiResponse(networks, "guest");
+
+        assertNotNull(filteredResponse);
+        assertEquals("GuestSSID", filteredResponse.get("ssid").asText());
+    }
+
+    @Test
+    public void testFilterWiFiResponse_NetworkNotFound() throws Exception {
+        String json = "{ \"wifi\": [{\"network\": \"home\", \"ssid\": \"HomeSSID\"}] }";
+        JsonNode networks = objectMapper.readTree(json).get("wifi");
+
+        JsonNode filteredResponse = wifiService.filterWiFiResponse(networks, "guest");
+
+        assertNull(filteredResponse);
+    }
+}
