@@ -1,0 +1,56 @@
+package com.lgi.msa.voiceai.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.when;
+
+public class LLMServiceMapperImplTest {
+
+    @Mock
+    private DeviceClient deviceClient;
+
+    @InjectMocks
+    private LLMServiceMapperImpl llmServiceMapper;
+
+    private ObjectMapper objectMapper = new ObjectMapper();
+
+    private String homeNetworkResponse;
+    private String guestNetworkResponse;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+
+        // Example JSON responses for home and guest networks
+        homeNetworkResponse = "{ \"network\": \"home\", \"ssid\": \"HomeSSID\", \"passphrase\": \"HomePass\" }";
+        guestNetworkResponse = "{ \"network\": \"guest\", \"ssid\": \"GuestSSID\", \"passphrase\": \"GuestPass\" }";
+    }
+
+    @Test
+    public void testShareWiFiCredentials() throws Exception {
+        when(deviceClient.getWiFiCredentials(true)).thenReturn(homeNetworkResponse);
+        when(deviceClient.filterWiFiResponse(homeNetworkResponse, "home")).thenReturn(objectMapper.readValue(homeNetworkResponse, Map.class));
+
+        Map<String, Object> response = llmServiceMapper.llmUsecaseService(Constants.SHARE_WIFI_CREDENTIALS, "token", "opCo");
+        assertNotNull(response);
+        assertNotNull(response.get(Constants.SHARE_WIFI_CREDENTIALS));
+    }
+
+    @Test
+    public void testShareGuestWiFi() throws Exception {
+        when(deviceClient.getWiFiCredentials(true)).thenReturn(guestNetworkResponse);
+        when(deviceClient.filterWiFiResponse(guestNetworkResponse, "guest")).thenReturn(objectMapper.readValue(guestNetworkResponse, Map.class));
+
+        Map<String, Object> response = llmServiceMapper.llmUsecaseService(Constants.SHARE_GUEST_WIFI, "token", "opCo");
+        assertNotNull(response);
+        assertNotNull(response.get(Constants.SHARE_GUEST_WIFI));
+    }
+}
