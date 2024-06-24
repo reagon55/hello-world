@@ -1,0 +1,41 @@
+package com.lgi.msa.voiceai.service;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.lgi.msa.voiceai.client.WiFiFeignClient;
+import com.lgi.msa.voiceai.client.WiFiClient;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class WiFiClientTest {
+
+    @Mock
+    private WiFiFeignClient wifiFeignClient;
+
+    @InjectMocks
+    private WiFiClient wifiClient;
+
+    private String accessToken = "test-token";
+    private String opCo = "test-opco";
+
+    @Test
+    public void testGetWiFiCredentials() {
+        boolean withPassphrase = true;
+        JsonNode expectedResponse = mock(JsonNode.class);
+
+        when(wifiFeignClient.getWiFiCredentials(accessToken, opCo, withPassphrase))
+                .thenReturn(expectedResponse);
+
+        JsonNode actualResponse = wifiClient.getWiFiCredentials(accessToken, opCo, withPassphrase);
+
+        assertEquals(expectedResponse, actualResponse);
+        verify(wifiFeignClient).getWiFiCredentials(accessToken, opCo, withPassphrase);
+    }
+}
