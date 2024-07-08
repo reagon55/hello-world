@@ -1,0 +1,179 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "OneWiFi API",
+    "description": "The One WiFi API allows to put a household into OneWiFi enabled state.",
+    "version": "0.0.1"
+  },
+  "paths": {
+    "/one-wifi": {
+      "get": {
+        "description": "Gets current status of OneWiFi",
+        "operationId": "getStatus",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OneWiFiResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AcceptedResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal system error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Upstream system error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Upstream timeout",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "OneWiFiResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string"
+          },
+          "criteria-not-met": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "last-refresh": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "round-trip": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "last-update": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "parameters": {
+            "type": "string"
+          }
+        }
+      },
+      "AcceptedResponse": {
+        "type": "object",
+        "properties": {
+          "last-request-success": {
+            "type": "boolean"
+          },
+          "last-data": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string"
+              },
+              "criteria-not-met": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "last-refresh": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "round-trip": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "last-update": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "parameters": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "httpStatusCode": {
+                "type": "integer"
+              },
+              "statusCode": {
+                "type": "integer"
+              },
+              "details": {
+                "type": "string"
+              },
+              "allErrors": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "correlationId": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
