@@ -1,0 +1,79 @@
+package com.lgi.voiceai.test.suit;
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder;
+import com.github.tomakehurst.wiremock.client.MockRequestHandler;
+import com.lgi.msa.test.common.mocks.MockRequestHandler;
+import com.lgi.msa.test.common.model.factory.AuthServerResponseFactory;
+import com.lgi.msa.test.common.model.smarthomeengine.ExecuteCommandResponse;
+import com.lgi.msa.test.common.model.smarthomeengine.LinkGoogleNestAccRequest;
+import com.lgi.msa.test.common.model.user.User;
+import com.lgi.msa.test.common.model.utils.UserUtils;
+import com.lgi.voiceai.Transcript;
+import com.lgi.voiceai.test.infrastructure.AbstractComponentTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.http.HttpStatus;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.any;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class ProcessTextPositiveTest extends AbstractComponentTest {
+
+    private WireMockServer wireMockServer;
+
+    @BeforeEach
+    void setUp() {
+        // Initialize and start the WireMock server on a specified port
+        wireMockServer = new WireMockServer(WireMockConfiguration.options().port(8080));
+        wireMockServer.start();
+
+        // Configure WireMock stubs
+        wireMockServer.stubFor(post(urlEqualTo("/aws-ai-endpoint"))
+                .willReturn(aResponse()
+                    .withStatus(200)
+                    .withHeader("Content-Type", "application/json")
+                    .withBody("{ \"result\": \"success\" }")));
+    }
+
+    @AfterEach
+    void tearDown() {
+        // Stop the WireMock server after each test
+        wireMockServer.stop();
+    }
+
+    @Test
+    void processText() {
+        // Setup mocks for other dependencies if needed
+        AwsAiConnector awsAiConnectorMock = mock(AwsAiConnector.class);
+
+        // When your service calls the aws-ai-connector endpoint, it should use WireMock
+        when(awsAiConnectorMock.yourMethod(any())).thenReturn("yourMockedResponse");
+
+        // Your service call
+        YourServiceClass yourService = new YourServiceClass();
+        yourService.setAwsAiConnector(awsAiConnectorMock); // Inject the mock
+
+        // Call the method to be tested
+        yourService.methodUnderTest();
+
+        // Add your assertions
+        assertEquals("expectedResult", "actualResult");
+    }
+}
