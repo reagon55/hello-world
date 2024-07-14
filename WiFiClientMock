@@ -1,0 +1,56 @@
+package com.lgi.cmsa.test.common.mocks;
+
+import com.lgi.msa.voiceai.client.WiFiClient;
+import com.lgi.msa.wifi.api.WifiNetworks;
+import org.mockito.Mockito;
+
+import java.util.Arrays;
+
+/**
+ * This class provides a mock implementation of the WiFiClient to be used in automation tests.
+ */
+public class WiFiClientMock {
+
+    /**
+     * Creates and configures a mock WiFiClient instance.
+     *
+     * @return a mock WiFiClient instance.
+     */
+    public static WiFiClient createMock() {
+        WiFiClient wiFiClient = Mockito.mock(WiFiClient.class);
+
+        // Mock response for getWiFiNetworksOverview for home network
+        WifiNetworks homeNetworks = new WifiNetworks();
+        homeNetworks.setNetworks(Arrays.asList(
+                createWifiNetwork("Home Network 1", "homePassphrase1"),
+                createWifiNetwork("Home Network 2", "homePassphrase2")
+        ));
+        Mockito.when(wiFiClient.getWiFiNetworksOverview(Mockito.anyString(), Mockito.eq("home"), Mockito.anyBoolean()))
+                .thenReturn(homeNetworks);
+
+        // Mock response for getWiFiNetworksOverview for guest network
+        WifiNetworks guestNetworks = new WifiNetworks();
+        guestNetworks.setNetworks(Arrays.asList(
+                createWifiNetwork("Guest Network 1", "guestPassphrase1"),
+                createWifiNetwork("Guest Network 2", "guestPassphrase2")
+        ));
+        Mockito.when(wiFiClient.getWiFiNetworksOverview(Mockito.anyString(), Mockito.eq("guest"), Mockito.anyBoolean()))
+                .thenReturn(guestNetworks);
+
+        return wiFiClient;
+    }
+
+    /**
+     * Helper method to create a WifiNetwork instance.
+     *
+     * @param name       the name of the WiFi network.
+     * @param passphrase the passphrase of the WiFi network.
+     * @return a WifiNetwork instance with the specified name and passphrase.
+     */
+    private static WifiNetworks.WifiNetwork createWifiNetwork(String name, String passphrase) {
+        WifiNetworks.WifiNetwork network = new WifiNetworks.WifiNetwork();
+        network.setName(name);
+        network.setPassphrase(passphrase);
+        return network;
+    }
+}
