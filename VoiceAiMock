@@ -1,0 +1,20 @@
+package com.lgi.msa.test.common.mocks;
+
+import com.github.tomakehurst.wiremock.client.WireMock;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.http.RequestMethod.*;
+
+public class VoiceAiMock extends AbstractMock {
+    private static final String BASE_PATH = "/voice-ai";
+    
+    public VoiceAiMock(WireMock wireMock) {
+        super(wireMock);
+    }
+
+    public void setupGetVoiceAiEndpoint() {
+        wireMock.register(get(urlPathEqualTo(BASE_PATH + "/endpoint"))
+            .willReturn(aResponse()
+                .withStatus(200)
+                .withBody("{\"message\":\"success\"}")));
+    }
+}
