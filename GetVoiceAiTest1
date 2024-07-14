@@ -1,0 +1,107 @@
+package com.lgi.cmsa.tests.services.voiceai;
+
+import com.lgi.cmsa.test.common.mocks.WiFiClientMock;
+import com.lgi.msa.voiceai.service.impl.LLMServiceMapperImpl;
+import com.lgi.msa.voiceai.service.LLMProcessor;
+import com.lgi.msa.voiceai.client.WiFiClient;
+import com.lgi.msa.wifi.api.WifiNetworks;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.testng.Assert;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import java.util.Map;
+
+/**
+ * This class contains automation tests for the LLMServiceMapperImpl class.
+ */
+public class GetVoiceAiTest {
+
+    @Mock
+    private WiFiClient wiFiClient;
+
+    @InjectMocks
+    private LLMServiceMapperImpl llmServiceMapper;
+
+    /**
+     * Sets up the test environment by initializing mocks.
+     */
+    @BeforeClass
+    public void setUp() {
+        // Initialize Mockito annotations
+        MockitoAnnotations.initMocks(this);
+
+        // Create and inject the mock WiFiClient
+        wiFiClient = WiFiClientMock.createMock();
+        llmServiceMapper = new LLMServiceMapperImpl(wiFiClient);
+    }
+
+    /**
+     * Tests the llmUsecaseService method for the "Show Connected Devices" use case.
+     */
+    @Test(groups = {"SMOKE", "AUTOMATION"})
+    public void testShowConnectedDevices() {
+        // Set up test data
+        LLMProcessor llmProcessor = new LLMProcessor(); // Configure with appropriate data
+        String generatedToken = "testToken";
+        String opCoValue = "testOpCoValue";
+
+        // Call the method to be tested
+        Map<String, Object> response = llmServiceMapper.llmUsecaseService(llmProcessor, generatedToken, opCoValue);
+
+        // Validate the response
+        Assert.assertNotNull(response);
+        Assert.assertTrue(response.containsKey("expectedKey"));
+        // Add more assertions based on the expected business logic for connected devices
+    }
+
+    /**
+     * Tests the llmUsecaseService method for the "Show Home WiFi" use case.
+     */
+    @Test(groups = {"SMOKE", "AUTOMATION"})
+    public void testShowHomeWifi() {
+        // Set up test data
+        LLMProcessor llmProcessor = new LLMProcessor(); // Configure with appropriate data
+        String generatedToken = "testToken";
+        String opCoValue = "testOpCoValue";
+
+        // Call the method to be tested
+        Map<String, Object> response = llmServiceMapper.llmUsecaseService(llmProcessor, generatedToken, opCoValue);
+
+        // Validate the response
+        Assert.assertNotNull(response);
+        Assert.assertTrue(response.containsKey("home"));
+        // Validate the home network data
+        WifiNetworks wifiNetworks = (WifiNetworks) response.get("home");
+        Assert.assertNotNull(wifiNetworks);
+        Assert.assertEquals(wifiNetworks.getNetworks().size(), 2);
+        Assert.assertEquals(wifiNetworks.getNetworks().get(0).getName(), "Home Network 1");
+        Assert.assertEquals(wifiNetworks.getNetworks().get(0).getPassphrase(), "homePassphrase1");
+    }
+
+    /**
+     * Tests the llmUsecaseService method for the "Show Guest WiFi" use case.
+     */
+    @Test(groups = {"SMOKE", "AUTOMATION"})
+    public void testShowGuestWifi() {
+        // Set up test data
+        LLMProcessor llmProcessor = new LLMProcessor(); // Configure with appropriate data
+        String generatedToken = "testToken";
+        String opCoValue = "testOpCoValue";
+
+        // Call the method to be tested
+        Map<String, Object> response = llmServiceMapper.llmUsecaseService(llmProcessor, generatedToken, opCoValue);
+
+        // Validate the response
+        Assert.assertNotNull(response);
+        Assert.assertTrue(response.containsKey("guest"));
+        // Validate the guest network data
+        WifiNetworks wifiNetworks = (WifiNetworks) response.get("guest");
+        Assert.assertNotNull(wifiNetworks);
+        Assert.assertEquals(wifiNetworks.getNetworks().size(), 2);
+        Assert.assertEquals(wifiNetworks.getNetworks().get(0).getName(), "Guest Network 1");
+        Assert.assertEquals(wifiNetworks.getNetworks().get(0).getPassphrase(), "guestPassphrase1");
+    }
+}
