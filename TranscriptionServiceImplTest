@@ -1,0 +1,94 @@
+package com.lgi.cmsa.tests.services.awsai;
+
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
+import java.io.InputStream;
+import java.util.concurrent.CompletableFuture;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.springframework.web.multipart.MultipartFile;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
+
+import com.lgi.msa.awsconnector.config.properties.AWSProperties;
+import com.lgi.msa.awsconnector.service.impl.TranscriptionServiceImpl;
+import com.lgi.msa.awsconnector.service.model.Transcript;
+
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.core.async.SdkPublisher;
+import software.amazon.awssdk.services.transcribestreaming.TranscribeStreamingAsyncClient;
+import software.amazon.awssdk.services.transcribestreaming.model.StartStreamTranscriptionRequest;
+import software.amazon.awssdk.services.transcribestreaming.model.TranscriptAlternative;
+import software.amazon.awssdk.services.transcribestreaming.model.TranscriptEvent;
+import software.amazon.awssdk.services.transcribestreaming.model.TranscriptResult;
+
+public class TranscriptionServiceImplTest {
+
+    @Mock
+    private AWSProperties awsProperties;
+
+    @Mock
+    private TranscribeStreamingAsyncClient transcribeStreamingAsyncClient;
+
+    @InjectMocks
+    private TranscriptionServiceImpl transcriptionService;
+
+    @BeforeMethod
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+
+        // Mock AWSProperties
+        when(awsProperties.getAccessKeyId()).thenReturn("test-access-key-id");
+        when(awsProperties.getSecretKey()).thenReturn("test-secret-key");
+
+        // Mock TranscribeStreamingAsyncClient
+        when(transcribeStreamingAsyncClient.startStreamTranscription(any(StartStreamTranscriptionRequest.class), any(InputStream.class), any()))
+                .thenReturn(mock(SdkPublisher.class));
+    }
+
+    @Test
+    public void testProcessAndRetrieveTranscription() throws Exception {
+        // Mock data
+        MultipartFile mockAudioFile = mock(MultipartFile.class);
+        when(mockAudioFile.getInputStream()).thenReturn(mock(InputStream.class));
+
+        String mockMediaEncoding = "pcm";
+        String mockMediaSampleRateHertz = "16000";
+
+        // Mock CompletableFuture for transcription result
+        CompletableFuture<TranscriptEvent> mockFuture = new CompletableFuture<>();
+        TranscriptEvent mockEvent = TranscriptEvent.builder()
+                .transcript(software.amazon.awssdk.services.transcribestreaming.model.Transcript.builder()
+                        .results(TranscriptResult.builder()
+                                .alternatives(TranscriptAlternative.builder()
+                                        .transcript("Mock transcription text")
+                                        .build())
+                                .build())
+                        .build())
+                .build();
+        mockFuture.complete(mockEvent);
+
+        // Mock the response handler to return the mock future
+        doAnswer(invocation -> {
+            Object[] args = invocation.getArguments();
+            ((TranscriptionServiceImpl.TranscriptResponseHandler) args[2]).apply(mockEvent);
+            return mockFuture;
+        }).when(transcribeStreamingAsyncClient)
+                .startStreamTranscription(any(StartStreamTranscriptionRequest.class), any(InputStream.class), any());
+
+        // Call the method under test
+        Transcript result = transcriptionService.processAndRetrieveTranscription(mockAudioFile, mockMediaEncoding, mockMediaSampleRateHertz);
+
+        // Verify the results
+        assertNotNull(result);
+        assertEquals(result.getText(), "Mock transcription text");
+    }
+}
