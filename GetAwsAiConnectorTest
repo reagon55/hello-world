@@ -1,0 +1,49 @@
+package com.lgi.cmsa.tests.services.awsai;
+
+import com.lgi.cmsa.annotations.Service;
+import com.lgi.cmsa.constants.Services;
+import com.lgi.cmsa.test.common.mocks.AwsAiConnectorMock;
+import com.lgi.cmsa.clients.services.AwsAiConnectorServiceClient;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import lombok.extern.slf4j.Slf4j;
+
+import static org.apache.http.HttpStatus.SC_OK;
+import static org.testng.Assert.assertEquals;
+
+@Slf4j
+public class GetAwsAiConnectorTest {
+
+    private MockedUser mockedUser;
+    private static final String xRequestId = RandomizerUtils.getRandomXRequestId();
+    private static final String widgets = "Widgets";
+
+    @BeforeClass(alwaysRun = true)
+    public void beforeAwsAiConnectorTest() {
+        mockedUser = new UserMocker().mock();
+        new ServiceClientFactory(mockedUser).getAwsAiConnectorClient().getAll();
+    }
+
+    @Test(groups = {SMOKE}, description = "MSA-10616")
+    @Service(name = Services.AWS_AI_CONNECTOR)
+    public void testGetAwsAiConnectorEndpoint() {
+        new ServiceClientFactory(mockedUser)
+            .getAwsAiConnectorClient()
+            .getAwsAiConnectorEndpoint()
+            .withRequestId(xRequestId)
+            .checkStatus(SC_OK);
+
+        List<AvailableWidget> actualCards = new ServiceClientFactory(mockedUser)
+            .getAwsAiConnectorClient()
+            .getAll()
+            .withRequestId(xRequestId)
+            .getBodyAsObject(AvailableWidgetsList.class)
+            .getCards();
+
+        log.info(String.format("Actual cards from AWS AI Connector: %s", actualCards));
+
+        Assertions.assertThat(actualCards)
+            .usingRecursiveComparison()
+            .isEqualTo(expectedCards);
+    }
+}
