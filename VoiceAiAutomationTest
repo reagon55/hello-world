@@ -1,0 +1,109 @@
+package com.lgi.msa.tests.services.voiceai;
+
+import com.lgi.msa.test.common.mocks.WiFiMock;
+import com.lgi.msa.test.common.model.WiFiNetworks;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+
+public class VoiceAiAutomationTest {
+
+    private WiFiMock wifiMock;
+
+    @BeforeClass
+    public void setUp() {
+        WireMock wireMock = new WireMock();
+        wifiMock = new WiFiMock(wireMock).withAuthHeader("Bearer someAuthToken");
+    }
+
+    @Test
+    public void testShowConnectedDevices() {
+        // Mocking the WiFi response
+        String responseBody = """
+        {
+            "wifi": [
+                {
+                    "id": "13RTcsqgxcJ3Tqil11",
+                    "network": "home",
+                    "ssid": "MyHomeWiFi",
+                    "last-refresh": "2024-07-14T21:32:59.402Z",
+                    "node-rule": "2.4-band",
+                    "parameters": "string",
+                    "node": {
+                        "cpe-srn": "fwECiL-pBaxWp_PQiLby171PyT-vt-yk2.Jmz",
+                        "radio-ssid": "home",
+                        "enable": "true"
+                    }
+                }
+            ]
+        }
+        """;
+
+        wifiMock.getAllWiFi(responseBody);
+
+        // Your logic to call the service and validate the response
+        WiFiNetworks networks = wifiMock.getAllWiFiNetworks();
+        assertEquals(networks.getNetworks().get(0).getNetwork(), "home");
+    }
+
+    @Test
+    public void testShareHomeWiFi() {
+        // Mocking the WiFi response for sharing home WiFi
+        String responseBody = """
+        {
+            "wifi": [
+                {
+                    "id": "13RTcsqgxcJ3Tqil11",
+                    "network": "home",
+                    "ssid": "MyHomeWiFi",
+                    "last-refresh": "2024-07-14T21:32:59.402Z",
+                    "node-rule": "2.4-band",
+                    "parameters": "string",
+                    "node": {
+                        "cpe-srn": "fwECiL-pBaxWp_PQiLby171PyT-vt-yk2.Jmz",
+                        "radio-ssid": "home",
+                        "enable": "true"
+                    }
+                }
+            ]
+        }
+        """;
+
+        wifiMock.getAllWiFi(responseBody);
+
+        // Your logic to call the service and validate the response
+        WiFiNetworks networks = wifiMock.getAllWiFiNetworks();
+        assertEquals(networks.getNetworks().get(0).getNetwork(), "home");
+    }
+
+    @Test
+    public void testShareGuestWiFi() {
+        // Mocking the WiFi response for sharing guest WiFi
+        String responseBody = """
+        {
+            "wifi": [
+                {
+                    "id": "13RTcsqgxcJ3Tqil11",
+                    "network": "guest",
+                    "ssid": "MyGuestWiFi",
+                    "last-refresh": "2024-07-14T21:32:59.402Z",
+                    "node-rule": "2.4-band",
+                    "parameters": "string",
+                    "node": {
+                        "cpe-srn": "fwECiL-pBaxWp_PQiLby171PyT-vt-yk2.Jmz",
+                        "radio-ssid": "guest",
+                        "enable": "true"
+                    }
+                }
+            ]
+        }
+        """;
+
+        wifiMock.getAllWiFi(responseBody);
+
+        // Your logic to call the service and validate the response
+        WiFiNetworks networks = wifiMock.getAllWiFiNetworks();
+        assertEquals(networks.getNetworks().get(0).getNetwork(), "guest");
+    }
+}
