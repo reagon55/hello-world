@@ -1,0 +1,80 @@
+package com.lgi.cmsa.tests.services.voiceai;
+
+import com.lgi.cmsa.annotations.Mocks;
+import com.lgi.cmsa.annotations.Service;
+import com.lgi.cmsa.clients.services.utils.ServiceClientFactory;
+import com.lgi.cmsa.clients.wiremock.UserMocker;
+import com.lgi.cmsa.exceptions.CustomProjectException;
+import com.lgi.msa.test.common.model.wifi.WifiNetwork;
+import com.lgi.msa.test.common.model.wifi.WifiNetworks;
+import com.lgi.msa.test.common.rest.clients.services.ServiceResponseHandler;
+import com.lgi.msa.util.helpers.TrackerHelper;
+import com.lgi.msa.constants.Groups;
+import com.lgi.msa.constants.TrackerStatus;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Factory;
+import org.testng.annotations.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Service(name = "voice-ai-service")
+@Mocks(required = {UserMocker.class})
+public class VoiceAiWiFiNetworkServiceTest {
+
+    private UserMocker userMocker;
+    private String homeSsid = "Home_SSID";
+    private String guestSsid = "Guest_SSID";
+
+    @BeforeClass(alwaysRun = true)
+    public void beforeClass() {
+        userMocker = new UserMocker();
+        userMocker.removeExistingStubbing();
+        mockWifiNetworks();
+    }
+
+    private void mockWifiNetworks() {
+        WifiNetwork homeWifiNetwork = new WifiNetwork();
+        homeWifiNetwork.setSsid(homeSsid);
+        homeWifiNetwork.setNetworkType(Network.HOME);
+
+        WifiNetwork guestWifiNetwork = new WifiNetwork();
+        guestWifiNetwork.setSsid(guestSsid);
+        guestWifiNetwork.setNetworkType(Network.GUEST);
+
+        userMocker.withWifiNetwork(homeWifiNetwork).mock();
+        userMocker.withWifiNetwork(guestWifiNetwork).mock();
+    }
+
+    @Test(groups = {Groups.SMOKE}, description = "Should return home WiFi network details when asked")
+    public void shouldReturnHomeWifiNetwork() {
+        ServiceResponseHandler response = new ServiceClientFactory(userMocker)
+                .getVoiceAiServiceClient()
+                .getVoiceAiDetails("show home wifi")
+                .checkStatus(HttpStatus.SC_OK);
+
+        WifiNetworks wifiNetworks = response.as(WifiNetworks.class);
+        assertThat(wifiNetworks.getSsid()).isEqualTo(homeSsid);
+    }
+
+    @Test(groups = {Groups.SMOKE}, description = "Should return guest WiFi network details when asked")
+    public void shouldReturnGuestWifiNetwork() {
+        ServiceResponseHandler response = new ServiceClientFactory(userMocker)
+                .getVoiceAiServiceClient()
+                .getVoiceAiDetails("show guest wifi")
+                .checkStatus(HttpStatus.SC_OK);
+
+        WifiNetworks wifiNetworks = response.as(WifiNetworks.class);
+        assertThat(wifiNetworks.getSsid()).isEqualTo(guestSsid);
+    }
+
+    @Test(groups = {Groups.SMOKE}, description = "Should return home WiFi network details by default")
+    public void shouldReturnHomeWifiNetworkByDefault() {
+        ServiceResponseHandler response = new ServiceClientFactory(userMocker)
+                .getVoiceAiServiceClient()
+                .getVoiceAiDetails("show wifi")
+                .checkStatus(HttpStatus.SC_OK);
+
+        WifiNetworks wifiNetworks = response.as(WifiNetworks.class);
+        assertThat(wifiNetworks.getSsid()).isEqualTo(homeSsid);
+    }
+}
