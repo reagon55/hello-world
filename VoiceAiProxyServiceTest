@@ -1,0 +1,97 @@
+package com.lgi.cmsa.tests.services.voiceai;
+
+import com.lgi.cmsa.annotations.Mocks;
+import com.lgi.cmsa.annotations.Service;
+import com.lgi.cmsa.clients.services.VoiceAiServiceClient;
+import com.lgi.cmsa.clients.services.utils.ServiceClientFactory;
+import com.lgi.cmsa.clients.wiremock.MockedUser;
+import com.lgi.cmsa.clients.wiremock.UserMocker;
+import com.lgi.cmsa.exceptions.CustomProjectException;
+import com.lgi.msa.test.common.model.wifi.WiFiNetwork;
+import com.lgi.msa.test.common.model.wifi.WiFiNetworksOverview;
+import com.lgi.msa.util.helpers.TrackerHelper;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Factory;
+import org.testng.annotations.Test;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.apache.http.HttpStatus.SC_OK;
+
+@Service(name = "VOICE_AI")
+@Mocks(required = {"WiFiClient"})
+public class VoiceAiProxyServiceTest {
+
+    private final String cacheControl;
+    private MockedUser mockedUser;
+    private String updatedGuestWiFiSsid;
+
+    @Factory(dataProvider = "getVoiceAiInProgressStateDataProvider")
+    public VoiceAiProxyServiceTest(String cacheControl) {
+        this.cacheControl = cacheControl;
+    }
+
+    @BeforeClass(alwaysRun = true)
+    public void beforeGetVoiceAiInProgressStateTest() {
+        WiFiNetwork guestWiFiNetwork = new WiFiNetwork();
+        guestWiFiNetwork.setSsid("UPC-guest1440280");
+        mockedUser = new UserMocker().getMockedUser();
+        mockedUser.removeExistingStubbing(guestWiFiNetwork);
+
+        guestWiFiNetwork.setCustomerData(GetCustomerDataParameters.builder()
+                .isZeroTouchEnabled(true)
+                .build(), mockedUser)
+                .mock();
+
+        updatedGuestWiFiSsid = guestWiFiNetwork.getSsid();
+    }
+
+    @Test(groups = {"SMOKE"}, description = "MSA-XXXX")
+    public void getVoiceAiInProgressStateTest() {
+        log.info("Request with Cache-control = " + cacheControl);
+
+        ServiceResponseHandler response = new ServiceClientFactory(mockedUser)
+                .getVoiceAiServiceClient(cacheControl)
+                .getVoiceAiDetails()
+                .checkStatus(SC_OK);
+
+        TrackerHelper.checkTrackerStatusOnly(response, TrackerStatus.SUCCESS);
+
+        WiFiNetworksOverview voiceAiResponse = response.getBodyAs(WiFiNetworksOverview.class);
+        List<WiFiNetwork> guestWiFiNetworks = voiceAiResponse.getWiFiNetworks("guest");
+
+        assertThat(guestWiFiNetworks)
+                .isNotEmpty()
+                .extracting(WiFiNetwork::getSsid)
+                .contains(updatedGuestWiFiSsid);
+
+        assertThat(response.getHeaderValues("LINK")).isEmpty();
+    }
+
+    @AfterClass(alwaysRun = true)
+    public void afterGetVoiceAiInProgressStateTest() {
+        mockedUser.cleanUp();
+    }
+
+    @DataProvider(name = "getVoiceAiInProgressStateDataProvider")
+    private static Iterator<Object[]> getVoiceAiInProgressStateDataProvider() {
+        Collection<Object[]> dp = new ArrayList<>();
+        dp.add(new Object[]{"NO_CACHE"});
+        dp.add(new Object[]{"0"});
+        return dp.iterator();
+    }
+
+    private VoiceAiServiceClient getVoiceAiServiceClient(String cacheControl) {
+        if (cacheControl.equals("NO_CACHE")) {
+            return new VoiceAiServiceClient(mockedUser).withCacheControlNoCache();
+        } else {
+            return new VoiceAiServiceClient(mockedUser).withCacheControlMaxAge(Integer.parseInt(cacheControl));
+        }
+    }
+}
