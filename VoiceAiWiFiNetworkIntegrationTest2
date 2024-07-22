@@ -1,0 +1,77 @@
+package com.lgi.cmsa.tests.services.voiceai;
+
+import com.lgi.cmsa.voiceai.client.WiFiClient;
+import com.lgi.msa.test.common.model.plume.wifinetwork.WiFiNetworks;
+import com.lgi.msa.test.common.model.wifi.Network;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+public class VoiceAiWiFiNetworkIntegrationTest {
+
+    private WiFiClient wifiClient;
+
+    @BeforeClass
+    public void setup() {
+        // Manually create instances of the necessary components
+        wifiClient = new WiFiClient();
+        
+        // Perform any additional initialization if needed
+        // setupTestData();
+        // startEmbeddedDatabase();
+    }
+
+    @Test
+    public void testGetHomeWiFiNetworks() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        WiFiNetworks wifiNetworks = wifiClient.getWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+
+        assertThat(wifiNetworks).isNotNull();
+        assertThat(wifiNetworks.getFirstNetworkByType(Network.HOME)).isNotNull();
+    }
+
+    @Test
+    public void testGetGuestWiFiNetworks() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        WiFiNetworks wifiNetworks = wifiClient.getWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+
+        assertThat(wifiNetworks).isNotNull();
+        assertThat(wifiNetworks.getFirstNetworkByType(Network.GUEST)).isNotNull();
+    }
+
+    @Test
+    public void testGetHomeWiFiNetworksWhenNoneExist() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        WiFiNetworks wifiNetworks = wifiClient.getWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+
+        assertThat(wifiNetworks).isNotNull();
+        assertThatThrownBy(() -> wifiNetworks.getFirstNetworkByType(Network.HOME))
+                .isInstanceOf(CustomProjectException.class)
+                .hasMessageContaining("No networks of type home");
+    }
+
+    @Test
+    public void testGetGuestWiFiNetworksWhenNoneExist() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        WiFiNetworks wifiNetworks = wifiClient.getWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+
+        assertThat(wifiNetworks).isNotNull();
+        assertThatThrownBy(() -> wifiNetworks.getFirstNetworkByType(Network.GUEST))
+                .isInstanceOf(CustomProjectException.class)
+                .hasMessageContaining("No networks of type guest");
+    }
+}
