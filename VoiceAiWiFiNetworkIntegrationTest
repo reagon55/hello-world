@@ -1,0 +1,110 @@
+package com.lgi.cmsa.tests.services.voiceai;
+
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.lgi.cmsa.exceptions.CustomProjectException;
+import com.lgi.msa.test.common.model.wifi.WiFiNetworks;
+import com.lgi.msa.test.common.model.wifi.WiFi;
+import com.lgi.cmsa.utils.Network;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.util.Arrays;
+
+public class VoiceAiWiFiNetworkIntegrationTest {
+
+    private WireMockServer wireMockServer;
+
+    @BeforeClass
+    public void setup() {
+        wireMockServer = new WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort());
+        wireMockServer.start();
+        WireMock.configureFor("localhost", wireMockServer.port());
+
+        // Simulate WiFi networks responses
+        WireMock.stubFor(get(urlPathMatching("/wifi/networks.*"))
+            .willReturn(aResponse()
+                .withHeader("Content-Type", "application/json")
+                .withBody("{\"wifi\": [{\"type\": \"HOME\", \"ssid\": \"HomeNetwork\"}, {\"type\": \"GUEST\", \"ssid\": \"GuestNetwork\"}]}")));
+    }
+
+    @Test
+    public void testGetHomeWiFiNetworks() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        // Simulate fetching WiFi networks
+        WiFiNetworks wiFiNetworks = fetchWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+        assertThat(wiFiNetworks).isNotNull();
+        assertThat(wiFiNetworks.getFirstNetworkByType(Network.HOME)).isNotNull();
+    }
+
+    @Test
+    public void testGetGuestWiFiNetworks() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        // Simulate fetching WiFi networks
+        WiFiNetworks wiFiNetworks = fetchWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+        assertThat(wiFiNetworks).isNotNull();
+        assertThat(wiFiNetworks.getFirstNetworkByType(Network.GUEST)).isNotNull();
+    }
+
+    @Test
+    public void testGetHomeWiFiNetworksWhenNoneExist() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        // Simulate fetching WiFi networks
+        WiFiNetworks wiFiNetworks = fetchWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+        assertThat(wiFiNetworks).isNotNull();
+        assertThatThrownBy(() -> wiFiNetworks.getFirstNetworkByType(Network.HOME))
+            .isInstanceOf(CustomProjectException.class)
+            .hasMessageContaining("No networks of type home");
+    }
+
+    @Test
+    public void testGetGuestWiFiNetworksWhenNoneExist() {
+        String accessToken = "validAccessToken";
+        String opCo = "someOpCo";
+        boolean withPassphrase = true;
+
+        // Simulate fetching WiFi networks
+        WiFiNetworks wiFiNetworks = fetchWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+        assertThat(wiFiNetworks).isNotNull();
+        assertThatThrownBy(() -> wiFiNetworks.getFirstNetworkByType(Network.GUEST))
+            .isInstanceOf(CustomProjectException.class)
+            .hasMessageContaining("No networks of type guest");
+    }
+
+    private WiFiNetworks fetchWiFiNetworksOverview(String accessToken, String opCo, boolean withPassphrase) {
+        // Create a new WiFiNetworks object
+        WiFiNetworks wiFiNetworks = new WiFiNetworks();
+
+        // Create mock WiFi networks based on your requirements
+        WiFi homeNetwork = new WiFi();
+        homeNetwork.setType(Network.HOME);
+        homeNetwork.setSsid("HomeNetwork");
+        homeNetwork.setPassphrase(withPassphrase ? "HomePassphrase" : null);
+
+        WiFi guestNetwork = new WiFi();
+        guestNetwork.setType(Network.GUEST);
+        guestNetwork.setSsid("GuestNetwork");
+        guestNetwork.setPassphrase(withPassphrase ? "GuestPassphrase" : null);
+
+        // Add the mock networks to the WiFiNetworks object
+        wiFiNetworks.setWifi(Arrays.asList(homeNetwork, guestNetwork));
+
+        return wiFiNetworks;
+    }
+}
