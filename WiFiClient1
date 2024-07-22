@@ -1,0 +1,16 @@
+package com.lgi.msa.test.common.client;
+
+import com.lgi.msa.wifi.api.WiFiNetworks;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class WiFiClient {
+
+    @Autowired
+    private WiFiFeignClient wifiServiceClient;
+
+    public WiFiNetworks getWiFiNetworksOverview(String accessToken, String opCo, boolean withPassphrase) {
+        return wifiServiceClient.getWiFiNetworksOverview(accessToken, opCo, withPassphrase);
+    }
+}
