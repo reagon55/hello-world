@@ -3,3 +3,29 @@
     "encoding": "flac",
     "sampleRateHertz": "48000"
 }
+
+Example JSON Request Body
+{
+    "file": "data:audio/flac;base64,<base64-encoded-audio-file>",
+    "encoding": "flac",
+    "sampleRateHertz": "48000"
+}
+Replace <base64-encoded-audio-file> with the actual base64 encoded string from your script.
+
+UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAABCxAgAEABAAZGF0YQAAAAA=...
+JSON Request Body
+
+{
+    "file": "data:audio/flac;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAABCxAgAEABAAZGF0YQAAAAA=...",
+    "encoding": "flac",
+    "sampleRateHertz": "48000"
+}
+Testing in Postman
+Set the URL: http://<your-server-address>/transcribe
+Method: POST
+Headers:
+Authorization: Bearer xxxxxxxx
+Content-Type: application/json
+Body:
+Select raw and JSON.
+Paste the JSON request body with the base64 encoded audio string.
