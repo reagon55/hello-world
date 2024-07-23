@@ -1,0 +1,21 @@
+Configuration Details:
+For the CH environment, the configuration is:
+
+yaml
+Copy code
+CH:
+  url: ${ACS_URL_CH:-https://acs-connector/CH}
+  username: ${ACS_USERNAME_CH:-defaultUser}
+  password: ${ACS_PASSWORD_CH:-defaultPass}
+  woICallbackUrl: https://acs-connector/CH/callback
+Constructing the URL:
+Base URL: https://acs-connector/CH
+Endpoint: /getAll
+Query Parameters:
+includeDocsisDetail=true
+includeConnectedDevices=true
+Final URL:
+bash
+Copy code
+https://acs-connector/CH/getAll?includeDocsisDetail=true&includeConnectedDevices=true
+This URL combines the base URL from your configuration, the endpoint, and the required query parameters.
