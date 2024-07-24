@@ -1,0 +1,71 @@
+The generated token in the TokenServiceImpl is used as the response for the endpoint in the OAuth2Resource class. Here's a detailed look at how this works:
+
+Step-by-Step Process:
+1. Receiving the Request:
+
+The client sends a POST request to the /oauth2/token endpoint with the necessary data.
+The token method in OAuth2Resource handles this request.
+
+2. Processing the Request in OAuth2Resource:
+
+The incoming request data is mapped to ExternalTokenRequest.
+The OpCo context is injected to provide additional information like the country code.
+The OpCo context is injected to provide additional information like the country code.
+
+@POST
+@Path("oauth2/token")
+@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+@Produces(MediaType.APPLICATION_JSON)
+@Operation(description = "To exchange an authorization code for an access token")
+@ApiResponse(responseCode = "200", description = "Success",
+             content = @Content(schema = @Schema(implementation = AccessToken.class)))
+@ApiResponse(responseCode = "500", description = "Internal error",
+             content = @Content(schema = @Schema(implementation = OAuth2Error.class)))
+public Response token(@Context OpCo opCo, @BeanParam ExternalTokenRequest externalTokenRequest) {
+    var externalTokenDto = tokenRequestMapper.toExternalTokenDto(externalTokenRequest, opCo.getCountryCode());
+    var accessToken = tokenService.createExternalAccessToken(externalTokenDto);
+    return Response.ok(accessToken).build();
+}
+
+3.
+Token Generation in TokenServiceImpl:
+
+The ExternalTokenRequest is converted to ExternalTokenDto.
+The TokenServiceImpl class is responsible for generating the token.
+
+@Override
+public AccessToken createExternalAccessToken(ExternalTokenDto externalTokenDto) {
+    var customerId = externalTokenDto.getCustomerId();
+
+    tokenRequestValidator.validateGrantType(externalTokenDto.getGrantType());
+    tokenRequestValidator.validateClientCredentials(externalTokenDto.getClientId(), externalTokenDto.getClientSecret(), externalClients);
+    tokenRequestValidator.validateCustomer(externalTokenDto, externalClients);
+
+    var claims = prepareExternalAccessTokenClaims(externalTokenDto);
+    var encryptedToken = cryptographerClient.encrypt(jwtGenerator.generateToken(claims))
+            .orElseThrow(CryptographerException::new);
+
+    Log.trace("Token is granted for customer={}, csr={}", externalTokenDto.getCsr(), customerId);
+    return AccessToken.create(encryptedToken, jwtConfig.getExpirationTimeInSeconds());
+}
+
+4.
+Returning the Token to the Client:
+
+The generated token is returned to the client as part of the HTTP response.
+
+Conclusion:
+The generated token from TokenServiceImpl is passed back to the client through the endpoint handled by OAuth2Resource. The flow involves:
+
+Receiving the token exchange request at the endpoint.
+Processing and validating the request.
+Generating the token in TokenServiceImpl.
+Returning the generated token in the HTTP response.
+This ensures that the client receives a valid access token as a result of their request to the /oauth2/token endpoint.
+
+
+
+
+
+
+
