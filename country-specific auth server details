@@ -1,0 +1,68 @@
+1. How country-specific auth server details (URL, etc.) are configured?
+
+Answer:
+Country-specific authentication server details can be configured within the configuration files using environment variables or directly within the YAML file(active.yaml). 
+This allows the application to be adaptable to different environments and countries by changing these configurations.
+
+authClients:
+  - country: US
+    clientId: ${US_CLIENT_ID}
+    clientSecret: ${US_CLIENT_SECRET}
+  - country: UK
+    clientId: ${UK_CLIENT_ID}
+    clientSecret: ${UK_CLIENT_SECRET}
+
+2. How clientId and secrets are maintained per country?
+Answer:
+Client IDs and secrets for each country are stored in the configuration files as environment variables. This ensures that sensitive information is not hardcoded and can be securely managed.
+
+externalClients:
+  akanaClient:
+    clientId: '${AKANA_CLIENT_ID:-80342639378901689554}'
+    clientSecret: '${AKANA_CLIENT_SECRET:-IzIdT0G7OlT2xSXEsDd1GbItAmiRvq9s}'
+  entertainmentClient:
+    clientId: '${ENTERTAINMENT_CLIENT_ID:-6740692280705167}'
+    clientSecret: '${ENTERTAINMENT_CLIENT_SECRET:-1CcWYXTcYE04oD82Uq4ISS3Zub9qG}'
+Note : These values are placeholders and can be dynamically set through environment variables.
+
+3. What is a process to change client secrets and what is a frequency?
+Answer:
+The process to change client secrets involves updating the environment variables or configuration management systems where these secrets are stored. The application can then be restarted or dynamically reloaded to pick up the new values.
+
+Frequency:
+
+The frequency of changing client secrets typically depends on the security policy, which might dictate rotations every 90 days or after a security breach.
+
+4. How are the external tokens validated for the requests coming from touchpoints? Are they connecting to country-specific auth servers?
+
+Answer:
+External tokens are validated by verifying them against the issuer's public keys or by connecting to the country-specific auth servers for validation. The configuration specifies the base URLs for token validation services.
+
+tokenValidatorConfig:
+  tokenValidatorApiClient:
+    clientName: token_validator_api_client
+    baseURL: ${TOKEN_VALIDATOR_BASE_URL:-https://token-validator-msa-development.internal.cmsa-lab.appdev.io}
+    tokenValidationPath: /tokens/internal/validate
+    connectionTimeout: 500ms
+    requestTimeout: 1000ms
+    idleTimeout: 5000ms
+    connectionFactory:
+      type: https
+    timeoutRetry:
+      name: token_validator_api_client_retry
+      maxAttempts: 2
+      waitDuration: 1 second
+
+This configuration indicates how the application connects to a token validator API client, with settings for timeouts and retries, ensuring that the tokens are validated through the specified base URL.
+
+Summary
+Country-specific Auth Configuration: Managed in configuration files or environment variables, allowing flexibility.
+Client IDs and Secrets: Stored securely using environment variables, managed through configuration files.
+Changing Secrets: Update in secure storage, restart services if needed, and follow security policies for rotation frequency.
+Token Validation: Configured to connect to token validator services, using specified URLs and handling retries and timeouts.
+These configurations ensure a secure, flexible, and efficient way to manage authentication and token validation across different countries and environments.
+
+
+
+
+
