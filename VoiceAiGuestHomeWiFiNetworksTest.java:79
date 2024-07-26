@@ -1,0 +1,33 @@
+The error message in the image states that a java.util.LinkedHashMap cannot be cast to a java.lang.String. This type of error typically occurs when you are trying to cast an object to a type that it is not compatible with.
+
+The line in question appears to be:
+
+
+VoiceAiGuestHomeWiFiNetworksTest.java:79
+Here are the steps to resolve this issue:
+
+Identify the Issue:
+
+Locate line 79 in the VoiceAiGuestHomeWiFiNetworksTest.java file.
+Check the part of the code where the cast is happening.
+Correct the Casting:
+
+Ensure that you are casting the object to the correct type. If the object is a LinkedHashMap, you need to handle it appropriately as a map.
+Debug the Object Type:
+
+Add some logging or use a debugger to inspect the actual type of the object before casting it. This will help you understand why the object is of type LinkedHashMap instead of String.
+Adjust Your Code:
+
+Modify your code to handle the object correctly. If you need a String, you may need to extract a specific value from the LinkedHashMap.
+Here is an example of how you might modify your code:
+
+// Assuming the object is a LinkedHashMap and you need a value from it
+Object obj = someMethodReturningObject(); // This method returns the object
+if (obj instanceof LinkedHashMap) {
+    LinkedHashMap map = (LinkedHashMap) obj;
+    // Extract the value you need from the map
+    String value = (String) map.get("yourKey"); // Replace "yourKey" with the actual key
+} else if (obj instanceof String) {
+    String value = (String) obj;
+}
+If you can share the relevant portion of the code around line 79, I can provide more specific guidance.
