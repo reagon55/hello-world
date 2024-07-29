@@ -1,0 +1,34 @@
+Hi Team,
+
+To ensure we implement the guest WiFi creation feature according to our requirements, I have a few additional questions:
+
+Default Credentials Storage:
+
+Should we store the default credentials in a configuration file (e.g., YAML) or directly in the Java code? The configuration file offers easier updates and environment management, while hardcoding in Java is simpler initially but less flexible.
+Credential Details and Format:
+
+Could you please confirm the exact details and format for the default credentials (e.g., SSID, passphrase, security mode)?
+Security Considerations:
+
+Are there any specific security requirements or guidelines we need to follow when generating or storing the default credentials?
+Identifier Requirements:
+
+Do we need to follow any specific format or guidelines for generating the unique identifier for each guest WiFi setup?
+Response Structure:
+
+Is the current response structure sufficient, or do we need any additional fields or information to be included in the response?
+Configuration Management:
+
+If we store the credentials in a configuration file, are there any existing tools or practices we should follow for managing these configurations?
+Environment-Specific Configurations:
+
+Should the default credentials be different for various environments (e.g., development, staging, production), and if so, how should we manage these differences?
+Testing and Validation:
+
+Are there any specific test cases or validation criteria that need to be met for this functionality?
+Logging and Monitoring:
+
+Do we need to implement any logging or monitoring to track the creation and usage of guest WiFi networks?
+Update Frequency:
+
+How often do we anticipate needing to update the default credentials, and what is the preferred process for making these updates?
