@@ -1,0 +1,3 @@
+When the prompt "create a guest WiFi with default credentials" is given, should the AI be responsible for setting up the guest WiFi network with the default credentials?
+If so, should this setup involve interacting with the existing modem and C-App flow to configure the network and fetch the credentials?
+Are there specific default credentials (SSID, passphrase, security mode) that we should use, or should the AI fetch these from the existing system as mentioned by you.
