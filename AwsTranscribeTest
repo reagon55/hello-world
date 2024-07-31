@@ -1,0 +1,42 @@
+import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.glassfish.jersey.media.multipart.file.FileDataBodyPart;
+import org.mockito.Mockito;
+import org.testng.Assert;
+import org.testng.annotations.Test;
+
+import java.io.File;
+import java.io.IOException;
+
+public class AwsTranscribeTest {
+
+    @Test
+    public void awsTranscribeTest() throws IOException {
+        // Create a mock file
+        File file = new File(getClass().getClassLoader().getResource("los_recording11.flac").getFile());
+
+        // Create the multipart form data
+        FormDataMultiPart multiPart = new FormDataMultiPart();
+        multiPart.bodyPart(new FileDataBodyPart("file", file));
+        multiPart.field("encoding", "encoding_value");
+        multiPart.field("sampleRateHz", "sample_rate_value");
+
+        // Mock the ServiceClientFactory and AwsAiConnectorClient
+        ServiceClientFactory serviceClientFactory = Mockito.mock(ServiceClientFactory.class);
+        AwsAiConnectorClient awsAiConnectorClient = Mockito.mock(AwsAiConnectorClient.class);
+
+        // Stub the method call
+        Mockito.when(serviceClientFactory.getAwsAiConnectorClient(Mockito.any())).thenReturn(awsAiConnectorClient);
+
+        // Mock the response from AwsAiConnectorClient
+        Transcript mockResponse = Mockito.mock(Transcript.class);
+        Mockito.when(awsAiConnectorClient.postTranscribe(Mockito.any(FormDataMultiPart.class))).thenReturn(mockResponse);
+
+        // Perform the test call
+        Transcript response = serviceClientFactory.getAwsAiConnectorClient(new User())
+            .postTranscribe(multiPart);
+
+        // Add assertions to verify the response
+        Assert.assertNotNull(response);
+        // Add more assertions as needed
+    }
+}
