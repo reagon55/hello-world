@@ -1,0 +1,19 @@
+plugins {
+    id 'java'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework:spring-web:5.3.9' // Ensure the correct version is specified
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.mockito:mockito-core:3.9.0'
+
+    // Add your other dependencies here
+}
+
+test {
+    useJUnitPlatform()
+}
