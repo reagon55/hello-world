@@ -1,0 +1,19 @@
+Hi Team,
+
+After thorough investigation with the provided x-request-id 180f60e808233391847c5d7e2ef935b0, here are the details and observations:
+
+Build version: iOS_GB_12.45.0_1913_JIT_S3PROD_QA_01_08_2025
+Device detail: iPhone 14 v17.2.1
+Account: connecthub@virginmedia.com / Test1234
+Findings:
+Kibana Logs:
+
+Searched and filtered the logs extensively in Kibana.
+Observed several GET and POST requests, but no entries indicating calls to the voice-ai microservice.
+The logs primarily indicate requests related to state checks and token validation.
+Database Checks:
+
+Verified in the database using the relevant customer ID.
+No records or interactions indicating voice-ai calls or failures.
+Conclusion:
+There are no logs or database entries suggesting that the voice-ai microservice was called or encountered any failures for the given x-request-id. This suggests that either the request to the voice-ai microservice never occurred or there was an issue before reaching that stage.
