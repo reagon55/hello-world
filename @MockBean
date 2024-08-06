@@ -1,0 +1,2 @@
+In the current component test code, the @MockBean annotation is not used, which is causing the external endpoint call to WiFi services instead of taking the response from the mocked WiFi service.
+I am trying to implement the @MockBean annotation in the component test cases to ensure the WiFi service is properly mocked and external calls are avoided.
