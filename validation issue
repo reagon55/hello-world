@@ -1,0 +1,1 @@
+In addition to the token validation issue, there is also a 400 Bad Request error, which indicates a separate problem related to the request format or the data being sent.
