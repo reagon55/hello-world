@@ -1,0 +1,121 @@
+To implement the API code as specified in the JIRA task, I'll guide you through creating the necessary Java code. The task involves creating a new endpoint in the acs-connector service to create an SPV ticket. Below is a basic implementation.
+
+Step 1: Define the Endpoint in the Controller (AcsResource.java)
+java
+Copy code
+import javax.ws.rs.POST;
+import javax.ws.rs.Path;
+import javax.ws.rs.core.Response;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.IMap;
+
+@Path("/acs-connector")
+public class AcsResource {
+
+    private final HazelcastInstance hazelcastInstance;
+
+    public AcsResource(HazelcastInstance hazelcastInstance) {
+        this.hazelcastInstance = hazelcastInstance;
+    }
+
+    @POST
+    @Path("/create-spv-ticket")
+    public Response createSpvTicket() {
+        // Generate a ticket ID using Hazelcast
+        String ticketId = hazelcastInstance.getIdGenerator("ticketIdGenerator").newId() + "";
+
+        // Set parameters in Hazelcast or any other required service
+        IMap<String, String> ticketMap = hazelcastInstance.getMap("spvTickets");
+        ticketMap.put(ticketId, "SPV_Ticket_Data"); // Example data
+
+        // Return the ticket ID in the response
+        return Response.ok(ticketId).build();
+    }
+}
+Step 2: Update Service Layer if Needed (AcsService.java)
+If your business logic requires a service layer to handle additional operations, create a corresponding service class:
+
+java
+Copy code
+public class AcsService {
+
+    private final HazelcastInstance hazelcastInstance;
+
+    public AcsService(HazelcastInstance hazelcastInstance) {
+        this.hazelcastInstance = hazelcastInstance;
+    }
+
+    public String createSpvTicket() {
+        // Generate a ticket ID
+        String ticketId = hazelcastInstance.getIdGenerator("ticketIdGenerator").newId() + "";
+
+        // Perform operations related to ticket creation
+        IMap<String, String> ticketMap = hazelcastInstance.getMap("spvTickets");
+        ticketMap.put(ticketId, "SPV_Ticket_Data");
+
+        return ticketId;
+    }
+}
+Step 3: Modify the Controller to Use the Service
+Update the AcsResource.java to call the AcsService for business logic.
+
+java
+Copy code
+@Path("/acs-connector")
+public class AcsResource {
+
+    private final AcsService acsService;
+
+    public AcsResource(AcsService acsService) {
+        this.acsService = acsService;
+    }
+
+    @POST
+    @Path("/create-spv-ticket")
+    public Response createSpvTicket() {
+        String ticketId = acsService.createSpvTicket();
+        return Response.ok(ticketId).build();
+    }
+}
+Step 4: Update Dependency Injection
+Ensure that the HazelcastInstance and AcsService are injected correctly using your framework’s DI (Dependency Injection) mechanism, whether it is Dropwizard, Spring, or any other.
+
+java
+Copy code
+public class AcsModule extends AbstractModule {
+
+    @Override
+    protected void configure() {
+        bind(AcsService.class).toInstance(new AcsService(getHazelcastInstance()));
+        bind(AcsResource.class);
+    }
+
+    private HazelcastInstance getHazelcastInstance() {
+        // Configure and return Hazelcast instance
+    }
+}
+Step 5: Testing
+You can write test cases to validate this functionality by mocking the HazelcastInstance and other dependencies.
+
+java
+Copy code
+import org.junit.jupiter.api.Test;
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+
+public class AcsResourceTest {
+
+    @Test
+    public void testCreateSpvTicket() {
+        HazelcastInstance mockHazelcast = mock(HazelcastInstance.class);
+        IMap<String, String> mockMap = mock(IMap.class);
+        when(mockHazelcast.getMap(anyString())).thenReturn(mockMap);
+        AcsService acsService = new AcsService(mockHazelcast);
+        AcsResource acsResource = new AcsResource(acsService);
+
+        Response response = acsResource.createSpvTicket();
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getEntity());
+    }
+}
+This is a basic template that you can modify based on your specific requirements. Ensure you handle exceptions and edge cases as per your project standards. Let me know if you need further customization or any additional features.
