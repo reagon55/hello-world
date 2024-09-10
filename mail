@@ -1,0 +1,10 @@
+Hi Manuraj,
+Here’s the update on the current status of MSA-10404:
+1.	Scope: The scope is clear as per the discussions from last week, and we are now focusing on the configuration change for CMSA service and CAS test automation.
+2.	Stories Required: We are still in the process of assessing the exact number of stories required, but the scope will cover changes related to the Akana URL redesign and configuration updates.
+3.	Developers: Will indulge the developers from our team for this work.
+4.	Timelines: We can begin development as soon as Akana shares the redesigned URL. Once that is done and we complete the integration into the feature branch, we can deploy to the SIT environment. I estimate the completion to happen within Sprint 29.2.
+5.	Showstoppers: There are no major blockers at the moment. We are awaiting the redesigned Akana URL, which should be shared this week.
+I will keep you updated on the progress and notify you as soon as we receive further updates from the Akana team.
+Best regards,
+Reagon
