@@ -1,0 +1,81 @@
+https://chatgpt.com/c/680dfcf6-5670-8002-b29d-5cd6dae28707
+
+CREATE TABLE user_table (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    first_name VARCHAR(255),
+    last_name VARCHAR(255),
+    email_id VARCHAR(255) UNIQUE,
+    user_id VARCHAR(255) UNIQUE,
+    password VARCHAR(255),
+    address VARCHAR(255),
+    user_type INT, -- 0 = admin, 1 = customer
+    is_logged_in BOOLEAN
+);
+
+CREATE TABLE product_table (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255),
+    description VARCHAR(255),
+    category VARCHAR(255),
+    make VARCHAR(255),
+    availability INT,
+    price DOUBLE,
+    warranty VARCHAR(255),
+    rating DOUBLE,
+    image_url VARCHAR(500),
+    date_of_manufacture DATE
+);
+
+
+CREATE TABLE cart_table (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    product_details JSON, -- (productId -> quantity)
+    total_price DOUBLE,
+    total_qty DOUBLE
+);
+
+CREATE TABLE order_table (
+    order_id INT PRIMARY KEY AUTO_INCREMENT,
+    user_id INT,
+    product_quantity_map JSON, -- (productId -> quantity)
+    total_amount DOUBLE,
+    order_status VARCHAR(50),
+    order_date TIMESTAMP
+);
+
+User Registration (POST /user/register)
+{
+    "firstName": "Reagon",
+    "lastName": "Winner",
+    "emailId": "reagon@example.com",
+    "userId": "reagon123",
+    "password": "password123",
+    "address": "Mumbai, India",
+    "userType": 1,
+    "isLoggedIn": false
+}
+
+Product Creation (POST /product/add)
+{
+    "name": "iPhone",
+    "description": "Apple smartphone",
+    "category": "Electronics",
+    "make": "Apple",
+    "availability": 10,
+    "price": 129999.99,
+    "warranty": "1 Year",
+    "rating": 4.5,
+    "imageUrl": "http://example.com/iphone.jpg",
+    "dateOfManufacture": "2024-04-01"
+}
+
+Add to Cart (POST /cart/add?userId=1)
+{
+    "productDetails": {
+        "1": 2,
+        "3": 1
+    }
+}
+
+
