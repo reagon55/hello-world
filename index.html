@@ -147,3 +147,60 @@
 </body>
 </html>
 
+--ex4array----
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dropdown Add/Remove</title>
+</head>
+<body>
+  <h3>Dropdown with Add & Remove</h3>
+
+  <select id="dropdown">
+    <option value="Apple">Apple</option>
+    <option value="Banana">Banana</option>
+    <option value="Mango">Mango</option>
+    <option value="Orange">Orange</option>
+  </select>
+
+  <br><br>
+
+  <button onclick="removeItem()">Remove</button>
+  <button onclick="addItem()">Add</button>
+
+  <p id="log"></p>
+
+  <script>
+    let removedItems = [];
+
+    function removeItem() {
+      let dropdown = document.getElementById("dropdown");
+      if (dropdown.options.length > 0) {
+        let removed = dropdown.options[dropdown.selectedIndex];
+        removedItems.push(removed);
+        dropdown.remove(dropdown.selectedIndex);
+        document.getElementById("log").textContent = `Removed: ${removed.text}`;
+      } else {
+        alert("No more items to remove!");
+      }
+    }
+
+    function addItem() {
+      let dropdown = document.getElementById("dropdown");
+      if (removedItems.length > 0) {
+        let item = removedItems.pop();
+        let option = document.createElement("option");
+        option.text = item.text;
+        option.value = item.value;
+        dropdown.add(option);
+        document.getElementById("log").textContent = `Added: ${item.text}`;
+      } else {
+        alert("No items left to add!");
+      }
+    }
+  </script>
+</body>
+</html>
+
+
