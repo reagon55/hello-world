@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <<head>
@@ -202,5 +203,72 @@
   </script>
 </body>
 </html>
+
+--ex5
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exercise 5</title>
+</head>
+<body>
+    <h3>User Form</h3>
+    <form onsubmit="handleSubmit(event)">
+        <input type="text" id="fname" placeholder="First Name" required />
+        <input type="text" id="lname" placeholder="Last Name" required />
+        <button type="submit">Submit</button>
+    </form>
+    <p id="result"></p>
+
+    <script src="ex5.js"></script>
+</body>
+</html>
+
+---ex5
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ex5 - JS Object Form</title>
+</head>
+<body>
+
+  <h2>User Form</h2>
+  <form onsubmit="handleSubmit(event)">
+    <label for="fname">First Name:</label>
+    <input type="text" id="fname" required><br><br>
+
+    <label for="lname">Last Name:</label>
+    <input type="text" id="lname" required><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <p id="result"></p>
+
+  <script src="ex5.js"></script>
+
+</body>
+</html>
+
+js--
+function handleSubmit(event) {
+    event.preventDefault(); // prevent page reload
+  
+    // Step 1: Get input values
+    const firstName = document.getElementById("fname").value;
+    const lastName = document.getElementById("lname").value;
+  
+    // Step 2: Create User object
+    const user = {
+      firstName: firstName,
+      lastName: lastName
+    };
+  
+    // Step 3: Display object
+    console.log(user);
+    document.getElementById("result").textContent = `User: ${user.firstName} ${user.lastName}`;
+  }
 
 
