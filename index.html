@@ -308,5 +308,45 @@ body {
     border-radius: 8px;
     cursor: pointer;
   }
+  ---greet.js
+import React from 'react';
+
+function Greet(props) {
+  return <h1>Hello, {props.name}!</h1>;
+}
+
+export default Greet;
+
+
+-------
+import React from 'react';
+import Greet from './Greet';
+
+function App() {
+  return (
+    <div>
+      <Greet name="Reagon" />
+      <Greet name="Vaibhav" />
+      <Greet name="Miss Minz isa champion," />
+    </div>
+  );
+}
+
+export default App;
+---------------------------
+        // Step 1: Create object
+const vehicle = {
+    manufacture: "Toyota",
+    model: "Fortuner",
+    fuelType: "Diesel"
+  };
+  
+  // Step 2: Destructure the object
+  const { manufacture, model, fuelType } = vehicle;
+  
+  // Step 3: Print them
+  console.log("Manufacture:", manufacture);
+  console.log("Model:", model);
+  console.log("Fuel Type:", fuelType);
   
 
