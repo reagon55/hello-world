@@ -348,5 +348,29 @@ const vehicle = {
   console.log("Manufacture:", manufacture);
   console.log("Model:", model);
   console.log("Fuel Type:", fuelType);
-  
+  -------
+
+        function getFibonacci(n: number): number[] {
+    const fib: number[] = [];
+
+    for (let i = 0; i < n; i++) {
+        if (i === 0) {
+            fib.push(0);
+        } else if (i === 1) {
+            fib.push(1);
+        } else {
+            fib.push(fib[i - 1] + fib[i - 2]);
+        }
+    }
+
+    return fib;
+}
+
+// Test cases
+console.log(getFibonacci(1)); // [0]
+console.log(getFibonacci(2)); // [0, 1]
+console.log(getFibonacci(3)); // [0, 1, 1]
+console.log(getFibonacci(4)); // [0, 1, 1, 2]
+console.log(getFibonacci(5)); // [0, 1, 1, 2, 3]
+
 
