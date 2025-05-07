@@ -374,3 +374,74 @@ console.log(getFibonacci(4)); // [0, 1, 1, 2]
 console.log(getFibonacci(5)); // [0, 1, 1, 2, 3]
 
 
+      --main.tsx---
+      import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App.tsx';
+import 'bootstrap/dist/css/bootstrap.min.css';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
+
+
+      ----App.tsx------
+
+      import React from 'react';
+import Home from './Home';
+import LoginForm from './LoginForm';
+import RegisterForm from './RegisterForm';
+
+const App = () => {
+  return (
+    <div className="container mt-5">
+      <Home />
+      <LoginForm />
+      <RegisterForm />
+    </div>
+  );
+};
+
+export default App;
+
+        ------LoginForm.tsx------
+
+        import React from 'react';
+
+const LoginForm = () => {
+  return (
+    <div className="card p-3 mt-3">
+      <h2>Login Form</h2>
+      <input className="form-control mb-2" placeholder="Email" />
+      <input className="form-control mb-2" placeholder="Password" type="password" />
+      <button className="btn btn-primary">Login</button>
+    </div>
+  );
+};
+
+export default LoginForm;
+
+
+        -----------RegisterForm.tsx----
+
+        import React from 'react';
+
+const RegisterForm = () => {
+  return (
+    <div className="card p-3 mt-3">
+      <h2>Registration Form</h2>
+      <input className="form-control mb-2" placeholder="Name" />
+      <input className="form-control mb-2" placeholder="Email" />
+      <input className="form-control mb-2" placeholder="Password" type="password" />
+      <button className="btn btn-success">Register</button>
+    </div>
+  );
+};
+
+export default RegisterForm;
+
+
+
