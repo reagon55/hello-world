@@ -1,4 +1,42 @@
+react
+import React from "react";
 
+class Welcome extends React.Component
+{
+
+render(): React.ReactNode {
+    
+    return  <h1>Welcome to React Class</h1>
+
+}
+}
+
+export default Welcome
+
+
+
+import { useState } from "react";
+
+const carList:string[]=['Volvo','BMW','Ferrari','Toyota']
+
+const MyListGrp = () => {
+const[selectedIndex,setSelectedIndex]=useState(-1)
+console.log(carList.length)
+return (
+<>
+<ul className="list-group">
+
+    {
+    carList.map((item,index)=><li key={index} 
+     onClick={()=>setSelectedIndex(index)}
+     className={selectedIndex===index?'list-group-item active':'list-group-item'}>{item}</li>)
+    }
+  </ul>
+</>
+);
+};
+export default MyListGrp
+=========
 <!DOCTYPE html>
 <html lang="en">
 <<head>
