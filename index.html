@@ -1,3 +1,34 @@
+Scenario: Simple Counter
+ 
+Imagine you need a counter that can be incremented and its value needs to be displayed in different parts of your application.
+ 
+Tasks:
+ 
+Set up a Counter Context:
+ 
+Create a new context called CounterContext.
+This context should hold:
+The current counter value (initially 0).
+An increment function to increase the counter.
+Create a Counter Provider:
+ 
+Build a CounterProvidercomponent.
+This component will wrap the parts of your application that need access to the counter.
+Inside the CounterProvider:
+Manage the counter state using useState, initialized to 0.
+Implement an increment function that updates the counter state.
+Use the CounterContext.Provider to pass the current counter value and the increment function as the value.
+Create Consumer Components:
+ 
+Build at least two components that consume the CounterContext:
+A Display Component: This component should display the current counter value.
+An Increment Button Component: This component should render a button that, when clicked, calls the increment function from the context.
+Wrap Your Application:
+ 
+In your main App component, wrap the display and increment button components with the CounterProvider.
+Hints and Considerations:
+ 
+===============================================================
 react
 import React from "react";
 
