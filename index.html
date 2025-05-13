@@ -1,3 +1,15 @@
+hook:ex
+
+const PaymentForm = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<FormData>({
+    resolver: yupResolver(schema),
+  });
+
+===================
 Ex2: The Yup code given please modify so that the error message can be shown beside the field itself.
 =================================================================================================================
 Ex 1: Create a Payment Form and validate it:
