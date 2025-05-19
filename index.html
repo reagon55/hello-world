@@ -1,3 +1,105 @@
+AWS Lambda
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+ 
+  <groupId>com.wipro</groupId>
+  <artifactId>mylambda</artifactId>
+  <version>0.0.1-SNAPSHOT</version>
+  <packaging>jar</packaging>
+ 
+  <name>mylambda</name>
+  <url>http://maven.apache.org</url>
+ 
+   <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+    </properties>
+ 
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-core</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-lambda-java-events</artifactId>
+            <version>3.11.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.amazonaws</groupId>
+            <artifactId>aws-java-sdk-s3</artifactId>
+            <version>1.12.367</version>
+        </dependency>
+    </dependencies>
+ 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <createDependencyReducedPom>false</createDependencyReducedPom>
+                </configuration>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+ 
+package com.wipro.mylambda;
+ 
+import com.amazonaws.services.lambda.runtime.Context;
+
+import com.amazonaws.services.lambda.runtime.LambdaLogger;
+
+import com.amazonaws.services.lambda.runtime.RequestHandler;
+ 
+public class HelloLambda implements RequestHandler<Request, Response> {
+ 
+    @Override
+
+    public Response handleRequest(Request request, Context context) {
+
+        LambdaLogger logger = context.getLogger();
+
+        logger.log("Processing question from " + request.name());
+
+        return new Response("Your name is : "+request.name());
+
+    }
+
+
+}
+ 
+record Request(String name, String question) {};
+ 
+record Response(String answer) {};
+
+ 
+Lunch Break up to 2 PM
+ 
+Please turn on your cameras
+ 
+Ex4: Create an AWS Lambda function using Java and Test it passing data
+ 
+==============================================================================
 hook:ex
 
 const PaymentForm = () => {
