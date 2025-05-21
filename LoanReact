@@ -1,3 +1,64 @@
+import React, { useState, useEffect } from 'react';
+import LoanForm from './components/LoanForm';
+import LoanList from './components/LoanList';
+
+function App() {
+  const [loans, setLoans] = useState([]);
+  const [loan, setLoan] = useState({ customer: '', amount: '', interestRate: '' });
+  const [editLoan, setEditLoan] = useState(null);
+  const [filters, setFilters] = useState({ customer: '' });
+
+  // Handle form submission for add or update
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (editLoan) {
+      const updatedLoans = loans.map((l) =>
+        l.id === editLoan.id ? { ...loan, id: editLoan.id } : l
+      );
+      setLoans(updatedLoans);
+      setEditLoan(null);
+    } else {
+      const newLoan = { ...loan, id: Date.now() };
+      setLoans([...loans, newLoan]);
+    }
+    setLoan({ customer: '', amount: '', interestRate: '' });
+  };
+
+  // When editLoan changes, update the form state
+  useEffect(() => {
+    if (editLoan) {
+      setLoan(editLoan);
+    }
+  }, [editLoan]);
+
+  const handleDelete = (id) => {
+    const updatedLoans = loans.filter((l) => l.id !== id);
+    setLoans(updatedLoans);
+  };
+
+  return (
+    <div>
+      <h2>Welcome to Loan Management</h2>
+      <LoanForm
+        loan={loan}
+        setLoan={setLoan}
+        handleSubmit={handleSubmit}
+        editLoan={editLoan}
+      />
+      <LoanList
+        loans={loans}
+        deleteLoan={handleDelete}
+        setEditLoan={setEditLoan}
+        filters={filters}
+        setFilters={setFilters}
+      />
+    </div>
+  );
+}
+
+export default App;
+
+==================================================================
 import React from 'react';
 
 const LoanForm = ({ loan, setLoan, handleSubmit, editLoan }) => {
