@@ -1,3 +1,46 @@
+ 
+Ex3: Pull mysql image and then run it as a daemon. Using exec get inside the container , connect to mysql and run different mysqlcommands like create database, create table etc.
+ 
+8606
+ 
+1.docker pull  <image name> -> downloads the image
+
+2.docker run –it <image id> -> run the container
+
+3.docker images or docker image ls -> List of images
+
+4.dockerps-> list of docker processes or containers
+
+5.docker stop <container id>  -> stops the container
+
+6.docker rm  <container id> -> removes the container
+
+7.docker rmi <image id> or <image name>
+
+8.docker run -itd --name my_container ubuntu
+
+9.docker rename admiring_hoover_1  jayanta_container
+
+10. docker exec -it <container name> sh  -> run any command on a running container
+
+11. docker exec -it my_container touch abc.txt
+
+12. docker run  -it --name docker_mysql -e MYSQL_ROOT_PASSWORD=mysqlpass -d mysql
+
+13. docker exec -it docker_mysql   bash
+
+	myql –u root –p 
+
+	give the password -> mysql prompt -> run mysql queries -> show databases, create database , use <dbname>,
+
+	select database()-> create a table and insert record i teh table, select records.
+ 
+ID to retrieve text is: 1461
+ 
+ 
+
+
+=======================================================
 Ex2 : download a ubuntu image from docker  hub and run two containers from that image. See listing of images and listing of containers. Then stop the containers and delete them and delete the image.
  
 1.docker pull  <image name> -> downloads the image
