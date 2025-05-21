@@ -1,3 +1,42 @@
+Ex1:Create a Jenkins pipeline using the declarative script.
+
+pipeline {
+    agent any
+ 
+    stages {
+         stage('Checkout') {
+        // Define the SCM to checkout from
+        steps {
+        checkout([$class: 'GitSCM',
+                  branches: [[name: '*/main']],
+                  userRemoteConfigs: [[
+                      url: 'https://gitlab.com/jk_tin/wipro_jenkins_demo_25',
+                      credentialsId: 'JENKIN_GITLAB_ACCESS_TOKEN'
+                  ]]
+        ])
+        }
+        }
+          stage('test') {
+	            steps {
+
+	                      bat 'mvn test' 
+
+            }
+
+    }
+     stage('build') {
+	            steps {
+
+	                      bat 'mvn clean install -DskipTests' 
+
+            }
+
+    }
+
+    }
+    }
+
+==========================================================================================================
 pipeline {
     agent any
     stages {
