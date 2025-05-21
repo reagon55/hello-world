@@ -1,5 +1,63 @@
 import React from 'react';
 
+const LoanForm = ({ loan, setLoan, handleSubmit, editLoan }) => {
+  const handleChange = (e) => {
+    setLoan({ ...loan, [e.target.name]: e.target.value });
+  };
+
+  return (
+    <div>
+      <h2>{editLoan ? 'Edit Loan' : 'Add Loan'}</h2>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="customer">Customer</label>
+          <input
+            id="customer"
+            name="customer"
+            type="text"
+            value={loan.customer}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="amount">Amount</label>
+          <input
+            id="amount"
+            name="amount"
+            type="number"
+            value={loan.amount}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div>
+          <label htmlFor="interestRate">Interest Rate</label>
+          <input
+            id="interestRate"
+            name="interestRate"
+            type="number"
+            value={loan.interestRate}
+            onChange={handleChange}
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={!(loan.customer && loan.amount && loan.interestRate)}
+        >
+          {editLoan ? 'Update Loan' : 'Add Loan'}
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default LoanForm;
+
+============================================
+import React from 'react';
+
 const LoanList = ({ loans, deleteLoan, setEditLoan, filters, setFilters }) => {
   const handleFilterChange = (e) => {
     setFilters({ ...filters, customer: e.target.value });
