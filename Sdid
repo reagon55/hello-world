@@ -1,0 +1,64 @@
+sdid
+package com.lbg.iau.ssi.coordinator.identity.resolver.service;
+
+import com.lbg.iau.ssi.coordinator.identity.resolver.config.CapiSDIDProperties;
+import com.lbg.iau.ssi.coordinator.identity.resolver.exception.ErrorConfig;
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.SDIDStatusResponse;
+import com.lbg.iau.ssi.coordinator.identity.resolver.util.LoggerManager;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
+
+import static com.lbg.iau.ssi.coordinator.identity.resolver.constant.Constants.*;
+
+@Service
+@RequiredArgsConstructor
+public class SDIDProxyService {
+
+    private static final Logger LOGGER = LoggerManager.getApplicationLogger(SDIDProxyService.class);
+
+    @Qualifier(BEAN_CAPI_SDID_STATUS_REST_TEMPLATE)
+    private final RestTemplate sdidRestTemplate;
+
+    private final CapiSDIDProperties capiSDIDProperties;
+    private final ErrorConfig errorConfig;
+
+    public SDIDStatusResponse getDeviceStatus(Map<String, String> headerMap, String deviceId) {
+        HttpEntity<Void> requestEntity = new HttpEntity<>(buildCapiHeaders(headerMap));
+        try {
+            LOGGER.info(headerMap, () -> String.format("Calling SDID CAPI for deviceId %s", deviceId));
+
+            ResponseEntity<SDIDStatusResponse> response = sdidRestTemplate.exchange(
+                    capiSDIDProperties.getOperations().getGetDeviceStatusById(),
+                    HttpMethod.GET,
+                    requestEntity,
+                    SDIDStatusResponse.class,
+                    deviceId
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                LOGGER.info(headerMap, () -> "Successfully retrieved SDID status.");
+                return response.getBody();
+            }
+
+            LOGGER.warn(headerMap, () -> "Non-200 response from SDID CAPI");
+            throw new ServiceException(errorConfig.generateError(IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_650.name()));
+
+        } catch (HttpStatusCodeException ex) {
+            LOGGER.warn(headerMap, () -> "SDID CAPI returned error: " + ex.getStatusCode());
+            throw new ServiceException(errorConfig.generateError(IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_651.name()));
+        } catch (ResourceAccessException ex) {
+            LOGGER.error(headerMap, () -> "Unable to reach SDID CAPI", ex);
+            throw new ServiceException(errorConfig.generateError(IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_652.name()));
+        }
+    }
+}
