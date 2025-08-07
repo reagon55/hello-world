@@ -1,0 +1,54 @@
+@Service
+@RequiredArgsConstructor
+public class SDIDProxyService {
+
+    private static final ApplicationLogger LOGGER =
+        LoggerManager.getApplicationLogger(SDIDProxyService.class);
+
+    private final RestTemplate sdidRestTemplate;
+
+    private final SDIDProperties sdidProperties;
+
+    private final ErrorConfig errorConfig;
+
+    public SDIDStatusResponse getSDIDStatus(Map<String, String> headerMap, String sdid) {
+        LOGGER.info(headerMap, () -> "Calling SDID status CAPI");
+
+        HttpEntity<String> requestEntity = new HttpEntity<>(null, buildHeaders(headerMap));
+        try {
+            ResponseEntity<SDIDStatusResponse> response = sdidRestTemplate.exchange(
+                sdidProperties.getOperations().getGetStatusURL(sdid),
+                HttpMethod.GET,
+                requestEntity,
+                SDIDStatusResponse.class
+            );
+
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            } else {
+                LOGGER.warn(headerMap, () -> "SDID CAPI returned non-2xx or null body");
+                throw new ServiceException(
+                    errorConfig.generateError("IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_SOME_CODE")
+                );
+            }
+
+        } catch (HttpStatusCodeException ex) {
+            LOGGER.error(headerMap, () -> "HTTP error from SDID CAPI: " + ex.getStatusCode(), ex);
+            throw new ServiceException(
+                errorConfig.generateError("IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_SOME_CODE")
+            );
+        } catch (ResourceAccessException ex) {
+            LOGGER.error(headerMap, () -> "Timeout accessing SDID CAPI", ex);
+            throw new ServiceException(
+                errorConfig.generateError("IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_SOME_CODE")
+            );
+        }
+    }
+
+    private HttpHeaders buildHeaders(Map<String, String> headerMap) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAll(headerMap);
+        return headers;
+    }
+}
+
