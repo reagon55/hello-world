@@ -1,3 +1,29 @@
+package com.lbg.iau.ssi.coordinator.identity.resolver.service;
+
+import com.lbg.iau.resolver.contract.model.SDIDStatus;
+import com.lbg.iau.ssi.coordinator.identity.resolver.exception.ServiceException;
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.SDIDStatusResponse;
+import com.lbg.iau.ssi.coordinator.identity.resolver.properties.CapiSDIDProperties;
+import com.lbg.sca.logger.ApplicationLogger;
+import com.lbg.sca.logger.LoggerManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.*;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
+
+import static com.lbg.iau.ssi.coordinator.identity.resolver.UserIdentityResolverConstants.ENTRY_LOG;
+import static com.lbg.iau.ssi.coordinator.identity.resolver.exception.ErrorCode.IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_647;
+import static com.lbg.iau.ssi.coordinator.identity.resolver.exception.ErrorCode.IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_648;
+import static com.lbg.iau.ssi.coordinator.identity.resolver.util.CommonUtil.buildCapiHeaders;
+import static com.lbg.iau.ssi.coordinator.identity.resolver.util.Constants.BEAN_CAPI_SDID_REST_TEMPLATE;
+
+
+---------------------------------------------------------------------------------------------------------------------------
 @Service
 @RequiredArgsConstructor
 public class SDIDProxyService {
