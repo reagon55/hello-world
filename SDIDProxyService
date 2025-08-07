@@ -1,3 +1,33 @@
+CapiSDIDProperties.java
+
+import jakarta.annotation.PostConstruct;
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.Configuration;
+
+import java.io.Serializable;
+
+@Data
+@Configuration
+@ConfigurationProperties(prefix = "services.capi.sdid-status")
+public class CapiSDIDProperties implements Serializable {
+
+    private String baseUrl;
+    private Operations operations;
+
+    @Data
+    public static class Operations implements Serializable {
+        private String sdidStatusEndpoint;
+    }
+
+    @PostConstruct
+    public void validateProperties() {
+        if (baseUrl == null || operations == null || operations.getSdidStatusEndpoint() == null) {
+            throw new IllegalStateException("CapiSDIDProperties is not properly configured");
+        }
+    }
+}
+------------------------------------------------------------------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.identity.resolver.service;
 
 import com.lbg.iau.resolver.contract.model.SDIDStatus;
