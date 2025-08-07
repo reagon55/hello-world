@@ -1,3 +1,72 @@
+Optional: Null Case (if needed)
+
+@Test
+void testGetSDIDStatus_NullResponse() {
+    SDIDStatusResponse mockResponse = new SDIDStatusResponse();
+    mockResponse.setSdidStatus(null);
+
+    ResponseEntity<SDIDStatusResponse> mockEntity = new ResponseEntity<>(mockResponse, HttpStatus.OK);
+
+    when(restTemplate.exchange(
+            eq(baseUrl + "/" + sdid),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(SDIDStatusResponse.class)
+    )).thenReturn(mockEntity);
+
+    SDIDStatusResponse result = sdidProxyService.getSDIDStatus(headerMap, sdid);
+
+    assertNotNull(result);
+    assertNull(result.getSdidStatus()); // Only if nulls are allowed
+}
+
+
+---------------------------------------------------------------------------------------------------------------------------
+Edge Case (AVAILABLE_TO_BIND)
+
+@Test
+void testGetSDIDStatus_AvailableToBind() {
+    SDIDStatusResponse mockResponse = new SDIDStatusResponse();
+    mockResponse.setSdidStatus(SDIDStatus.AVAILABLE_TO_BIND);
+
+    ResponseEntity<SDIDStatusResponse> mockEntity = new ResponseEntity<>(mockResponse, HttpStatus.OK);
+
+    when(restTemplate.exchange(
+            eq(baseUrl + "/" + sdid),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(SDIDStatusResponse.class)
+    )).thenReturn(mockEntity);
+
+    SDIDStatusResponse result = sdidProxyService.getSDIDStatus(headerMap, sdid);
+
+    assertNotNull(result);
+    assertEquals(SDIDStatus.AVAILABLE_TO_BIND, result.getSdidStatus());
+}
+
+-----------------------------------------------------------------------------------------------------------------------------------
+Negative Case (BLOCKED)
+@Test
+void testGetSDIDStatus_Blocked() {
+    SDIDStatusResponse mockResponse = new SDIDStatusResponse();
+    mockResponse.setSdidStatus(SDIDStatus.BLOCKED);
+
+    ResponseEntity<SDIDStatusResponse> mockEntity = new ResponseEntity<>(mockResponse, HttpStatus.OK);
+
+    when(restTemplate.exchange(
+            eq(baseUrl + "/" + sdid),
+            eq(HttpMethod.GET),
+            any(HttpEntity.class),
+            eq(SDIDStatusResponse.class)
+    )).thenReturn(mockEntity);
+
+    SDIDStatusResponse result = sdidProxyService.getSDIDStatus(headerMap, sdid);
+
+    assertNotNull(result);
+    assertEquals(SDIDStatus.BLOCKED, result.getSdidStatus());
+}
+
+--------------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.identity.resolver.proxy;
 
 import com.lbg.iau.ssi.coordinator.identity.resolver.model.SDIDStatus;
