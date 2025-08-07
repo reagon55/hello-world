@@ -1,3 +1,71 @@
+package com.lbg.iau.ssi.coordinator.identity.resolver.proxy;
+
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.SDIDStatus;
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.SDIDStatusResponse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class SDIDProxyServiceTest {
+
+    @InjectMocks
+    private SDIDProxyService sdidProxyService;
+
+    @Mock
+    private RestTemplate restTemplate;
+
+    private Map<String, String> headerMap;
+    private String sdid;
+    private String baseUrl = "http://mock-capi/sdid/status"; // you can override this manually
+
+    @BeforeEach
+    void setUp() {
+        headerMap = new HashMap<>();
+        headerMap.put("Authorization", "Bearer dummy-token");
+        sdid = "sample-sdid";
+
+        // Inject the URL manually if @Value doesn't work
+        sdidProxyService.sdidStatusUrl = baseUrl;
+    }
+
+    @Test
+    void testGetSDIDStatus_Success() {
+        // Prepare mock response
+        SDIDStatusResponse mockResponse = new SDIDStatusResponse();
+        mockResponse.setSdidStatus(SDIDStatus.ENABLED);
+
+        ResponseEntity<SDIDStatusResponse> mockEntity = new ResponseEntity<>(mockResponse, HttpStatus.OK);
+
+        // Mocking RestTemplate call
+        when(restTemplate.exchange(
+                eq(baseUrl + "/" + sdid),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(SDIDStatusResponse.class)
+        )).thenReturn(mockEntity);
+
+        // Call the method
+        SDIDStatusResponse result = sdidProxyService.getSDIDStatus(headerMap, sdid);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(SDIDStatus.ENABLED, result.getSdidStatus());
+    }
+}
+
+--------------------------------------------------------------------------------------------------------
 CapiSDIDProperties.java
 
 import jakarta.annotation.PostConstruct;
