@@ -1,6 +1,95 @@
 unit test
 
 @ExtendWith(MockitoExtension.class)
+class ResponseBuilderServiceTest {
+
+    @InjectMocks
+    private ResponseBuilderService responseBuilderService;
+
+    @Mock
+    private SDIDProfileService sdidProfileService;
+
+    @BeforeEach
+    void wirePrivates() {
+        // if sdidProfileService is a private field, inject it
+        ReflectionTestUtils.setField(responseBuilderService, "sdidProfileService", sdidProfileService);
+    }
+
+    @Test
+    void enrichResponse_SDID_withTMX_callsService_setsStatus_andMovesState() {
+        // given
+        IdentityResolverResponse response = new IdentityResolverResponse();
+        JourneyConfiguration config = new JourneyConfiguration();
+        JourneyState journeyState = new JourneyState(config, new HashMap<>());
+
+        List<String> eligibleAuthenticators = new ArrayList<>();
+        String userCredentialStore = "userCredentialStore";
+        String linkedCustomerId   = "linked-123";
+        Map<String, String> headerMap = Map.of("correlationId", "cid-1");
+        String credentialId = "cred-1";
+        String partition    = "p1";
+        String tmxProfileId = "tmx-42";
+
+        SDIDStatusResponse sdid = new SDIDStatusResponse();
+        // use whatever your type is: enum or String
+        // e.g., sdid.setSdidStatus(SDIDStatus.ELIGIBLE);
+        sdid.setSdidStatus("ELIGIBLE");
+
+        when(sdidProfileService.getSDIDStatus(headerMap, userCredentialStore, linkedCustomerId, tmxProfileId))
+                .thenReturn(sdid);
+
+        // when
+        // IMPORTANT: keep the arg ORDER exactly as your method defines it.
+        responseBuilderService.enrichResponse(
+                journeyState,
+                eligibleAuthenticators,
+                userCredentialStore,
+                response,
+                linkedCustomerId,
+                headerMap,
+                credentialId,
+                partition,
+                tmxProfileId
+        );
+
+        // then
+        assertEquals("ELIGIBLE", response.getSdidStatus()); // or SDIDStatus.ELIGIBLE
+        assertEquals(StateEnum.AWAITING_SDID, journeyState.getJourneyState());
+        verify(sdidProfileService, times(1))
+                .getSDIDStatus(headerMap, userCredentialStore, linkedCustomerId, tmxProfileId);
+    }
+
+    @Test
+    void enrichResponse_SDID_withoutTMX_doesNotCallService() {
+        // given
+        IdentityResolverResponse response = new IdentityResolverResponse();
+        JourneyState journeyState = new JourneyState(new JourneyConfiguration(), new HashMap<>());
+
+        // when
+        responseBuilderService.enrichResponse(
+                journeyState,
+                new ArrayList<>(),
+                "userCredentialStore",
+                response,
+                "linked-123",
+                Map.of("correlationId", "cid-1"),
+                "cred-1",
+                "p1",
+                null // TMX missing
+        );
+
+        // then
+        verifyNoInteractions(sdidProfileService);
+        // (optional) assert that sdidStatus not set and state not switched
+        assertNull(response.getSdidStatus());
+        // or assert the state remains whatever it was before this branch
+    }
+}
+
+-----------------------------------------------
+unit test
+
+@ExtendWith(MockitoExtension.class)
 class SDIDProxyServiceTest {
 
     @Mock RestTemplate restTemplate;
