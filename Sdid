@@ -1,3 +1,86 @@
+unit test
+
+@ExtendWith(MockitoExtension.class)
+class SDIDProxyServiceTest {
+
+    @Mock RestTemplate restTemplate;
+    @Mock CapiSDIDProperties capiSDIDProperties;
+    @Mock CapiSDIDProperties.Operations ops;
+
+    SDIDProxyService sdidProxyService;
+
+    Map<String, String> headerMap;
+
+    final String baseUrl = "http://mock-capi";
+    final String endpointTpl = "/sdid/customers/{customerInformationSystem}/{customerId}/devices/strong-device-id";
+
+    final String cis   = "ocis";       // customerInformationSystem
+    final String cust  = "12345xyz";   // customerId
+    final String tmx   = "tmx-abc-123";
+
+    @BeforeEach
+    void setUp() {
+        sdidProxyService = new SDIDProxyService(restTemplate, capiSDIDProperties, new ErrorConfig());
+        headerMap = new HashMap<>();
+        headerMap.put("x-lbg-txn-correlation-id", "corr");
+        headerMap.put("x-lbg-session-id", "sess");
+        headerMap.put("x-lbg-brand", "LTB");
+
+        when(capiSDIDProperties.getBaseUrl()).thenReturn(baseUrl);
+        when(capiSDIDProperties.getOperations()).thenReturn(ops);
+        when(ops.getSdidStatusEndpoint()).thenReturn(endpointTpl);
+    }
+
+    @Test
+    void testGetSDIDStatus_Success() {
+        // Arrange expected URI (same way as code)
+        URI expectedUri = UriComponentsBuilder
+                .fromHttpUrl(baseUrl + endpointTpl)
+                .queryParam("tmxProfileId", tmx)
+                .build(cis, cust);
+
+        SDIDStatusResponse body = new SDIDStatusResponse();
+        body.setSdidStatus(SDIDStatus.BOUND);  // or AVAILABLE_TO_BIND / BLOCKED
+        ResponseEntity<SDIDStatusResponse> entity = new ResponseEntity<>(body, HttpStatus.OK);
+
+        when(restTemplate.exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(SDIDStatusResponse.class)
+        )).thenReturn(entity);
+
+        // Act
+        SDIDStatusResponse result = sdidProxyService.getSDIDStatus(headerMap, cis, cust, tmx);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(SDIDStatus.BOUND, result.getSdidStatus());
+    }
+
+    @Test
+    void testGetSDIDStatus_Non2xx_ThrowsServiceException() {
+        URI expectedUri = UriComponentsBuilder
+                .fromHttpUrl(baseUrl + endpointTpl)
+                .queryParam("tmxProfileId", tmx)
+                .build(cis, cust);
+
+        ResponseEntity<SDIDStatusResponse> non2xx =
+                new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+
+        when(restTemplate.exchange(
+                eq(expectedUri),
+                eq(HttpMethod.GET),
+                any(HttpEntity.class),
+                eq(SDIDStatusResponse.class)
+        )).thenReturn(non2xx);
+
+        assertThrows(ServiceException.class,
+                () -> sdidProxyService.getSDIDStatus(headerMap, cis, cust, tmx));
+    }
+}
+
+---------------------------------------------------------------------------------------------
 sdid
 package com.lbg.iau.ssi.coordinator.identity.resolver.service;
 
