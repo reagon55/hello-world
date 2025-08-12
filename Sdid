@@ -1,3 +1,43 @@
+
+sdid() Expectation Method
+
+public Expectation[] sdid() {
+    return new Expectation[] {
+        new Expectation()
+            .request(
+                request()
+                    .withMethod("GET")
+                    // Path for SDID challenge API (adjust if needed)
+                    .withPath(".*/sdid-status/ocis/mta/2506daaef-5a27-41ea-9132-e275045de8c4")
+            )
+            .thenRespond(
+                response()
+                    .withStatusCode(200)
+                    .withHeader("Content-Type", "application/json")
+                    // This will load JSON body from your expectations/config-sdid.json
+                    .withBody(readFileFromClassPathOrPath("expectations/config-sdid.json"))
+            )
+    };
+}
+
+Updated initializeExpectations()
+
+@Override
+public Expectation[] initializeExpectations() {
+    return Stream.of(
+            credentials(),
+            cache(),
+            customers(),
+            session(),
+            card_reader(),
+            mi(),
+            sdid() // <-- Added our new SDID expectation here
+        )
+        .flatMap(Arrays::stream)
+        .toArray(Expectation[]::new);
+}
+
+----------------------------------------------------
 unit test
 
 @ExtendWith(MockitoExtension.class)
