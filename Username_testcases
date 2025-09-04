@@ -1,0 +1,88 @@
+1) Password revoked → throws CoordinatorException with ERR_648
+
+@Test
+void retrieveCredentialsByUsername_PasswordRevoked_Throws() throws Exception {
+    String revokedJson = String.format("""
+    {
+      "passwordStatus": "%s",
+      "linkedCustomerId": "x"
+    }
+    """, Constants.CAPI_CREDENTIAL_MGMT_PASSWORDSTATUS_REVOKED);
+
+    mockServer.expect(ExpectedCount.once(), requestTo(new URI(IDENTITY_STORE_URI_PATH)))
+              .andExpect(method(GET))
+              .andRespond(withSuccess(revokedJson, APPLICATION_JSON));
+
+    CoordinatorException ex = assertThrows(CoordinatorException.class, () ->
+        credentialsManagementServiceProxy.retrieveCredentialsByUsername(
+            headerMap, "ida", "identifierPartition", "credentialId")
+    );
+
+    // Your service throws with this code in the revoked path
+    // (matches your earlier screenshots)
+    org.assertj.core.api.Assertions.assertThat(ex.getMessage())
+        .contains("IAU_SSI_COORDINATOR_IDENTITY_RESOLVER_ERR_648");
+
+    mockServer.verify();
+}
+---------------
+2) 404 / Not Found → mapped to CoordinatorException with error fields
+
+@Test
+void retrieveCredentialsByUsername_NotFound_MappedToCoordinatorException() throws Exception {
+    String errorJson = """
+    {
+      "reasonCode": "999",
+      "action": "TERMINATE",
+      "message": "Malformed Request",
+      "type": "ERROR"
+    }
+    """;
+
+    mockServer.expect(ExpectedCount.once(), requestTo(new URI(IDENTITY_STORE_URI_PATH)))
+              .andExpect(method(GET))
+              .andRespond(withStatus(HttpStatus.NOT_FOUND)
+                  .contentType(APPLICATION_JSON)
+                  .body(errorJson));
+
+    CoordinatorException ex = assertThrows(CoordinatorException.class, () ->
+        credentialsManagementServiceProxy.retrieveCredentialsByUsername(
+            headerMap, "ida", "identifierPartition", "credentialId")
+    );
+
+    // If your Error object has these getters (as in other tests), assert them:
+    var err = ex.getError();
+    org.assertj.core.api.Assertions.assertThat(err)
+        .hasFieldOrPropertyWithValue("reasonCode", "999")
+        .hasFieldOrPropertyWithValue("action", "TERMINATE")
+        .hasFieldOrPropertyWithValue("type", "ERROR");
+    org.assertj.core.api.Assertions.assertThat(err.getMessage())
+        .contains("Malformed");
+
+    mockServer.verify();
+}
+------------------------------------------
+3) 403 / Forbidden (status-code exception) → mapped to CoordinatorException
+
+@Test
+void retrieveCredentialsByUsername_StatusCodeException_Forbidden() throws Exception {
+    mockServer.expect(ExpectedCount.once(), requestTo(new URI(IDENTITY_STORE_URI_PATH)))
+              .andExpect(method(GET))
+              .andRespond(request -> {  // simulate RestTemplate throwing
+                  throw new HttpClientErrorException(HttpStatus.FORBIDDEN, "");
+              });
+
+    CoordinatorException ex = assertThrows(CoordinatorException.class, () ->
+        credentialsManagementServiceProxy.retrieveCredentialsByUsername(
+            headerMap, "ida", "identifierPartition", "credentialId")
+    );
+
+    // In your existing tests this maps to a generic internal error payload
+    org.assertj.core.api.Assertions.assertThat(ex.getError())
+        .hasFieldOrPropertyWithValue("type", "ERROR")
+        .hasFieldOrPropertyWithValue("action", "TERMINATE");
+    org.assertj.core.api.Assertions.assertThat(ex.getError().getMessage())
+        .containsIgnoringCase("internal error");
+
+    mockServer.verify();
+}
