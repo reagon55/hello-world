@@ -1,0 +1,55 @@
+SHL Automata-Pro Practice Problems
+Problem 1: Partial Sorting
+You are given a list of integers of size N. Write an algorithm to sort the first K elements in ascending order and the remaining (N-K) elements in descending order.
+
+Input:
+The first line of the input consists of an integer n, representing the number of elements.
+The second line consists of n space-separated integers representing the elements of the list.
+The last line consists of an integer k, representing the number of elements to be sorted in ascending order.
+
+Output:
+Print n space-separated integers representing the sorted list.
+
+Example:
+Input:
+8
+11 7 5 10 46 23 16 8
+3
+
+Output:
+5 7 11 46 23 16 10 8
+
+Explanation:
+The first three elements are arranged in increasing order and the remaining elements in decreasing order.
+Problem 2: Alumni Dinner Arrangement
+A university has invited its alumni for a dinner. The alumni register on the university website and also identify one alumnus that they like from among the registered alumni. A round table is arranged for the dinner. The university wants to seat the alumni in such a way that each alumnus sits next to the alumnus they like. Write an algorithm to identify the alumni who will attend the dinner in the possible seating arrangement.
+
+If there is more than one possible seating arrangement, then output the one that is smallest.
+
+Input:
+The first line of the input consists of an integer n, representing the number of alumni.
+The second line consists of n space-separated integers alumni[0], alumni[1], ..., alumni[n-1] representing the ID of the person whom the ith alumnus likes.
+
+Output:
+Print space-separated integers representing the IDs of the alumni who will attend the dinner.
+
+Note:
+One alumnus can be liked by multiple alumni.
+
+Constraints:
+1 ≤ n ≤ 10^5
+
+Example:
+Input:
+4
+2 3 4 1
+
+Output:
+1 2 3 4
+
+Explanation:
+The first alumnus likes the person whose ID is 2.
+The second alumnus likes the person whose ID is 3.
+The third alumnus likes the person whose ID is 4.
+The fourth alumnus likes the person whose ID is 1.
+Hence, all 4 alumni can be seated around the table in the order 1 2 3 4.
