@@ -1,3 +1,53 @@
+@Override
+public MiPositions getMiChallenge(Map<String, String> headerMap, String credentialStore, String partition, String credentialId) {
+
+    if (credentialId != null && credentialStore != null && partition != null) {
+        return memorableInformationRestTemplate.executeGetRequest(
+                headerMap,
+                MiPositions.class,
+                memorableInformationProperties.getOperations().getMemorableInformationChallengeCode(),
+                credentialStore,
+                partition,
+                credentialId
+        );
+    } else {
+        throw new CoordinatorException(
+            errorConfig.getErrorMap().get(ErrorCode.IAU_SSI_COORDINATOR_FETCH_API_ERR_101),
+            "Missing required values: credentialId / credentialStore / partition"
+        );
+    }
+}
+✅ Now your flow is complete:
+MiChallengeServiceImpl ➝ implements overloaded getMiChallenge(...)
+
+MiChallengeService interface ➝ declares same method
+
+Your JUnit test can now call this with 4 args
+
+java
+Copy code
+miChallengeService.getMiChallenge(headerMap, null, null, null);
+🚀 Final Tip: Fix the 4 Red Errors (Compile-Time)
+Make sure:
+
+memorableInformationRestTemplate is properly mocked in your JUnit
+
+memorableInformationProperties.getOperations().getMemorableInformationChallengeCode() is not null
+
+errorConfig.getErrorMap() returns a non-null map
+
+Send me a screenshot if red underline still persists after pasting this logic — we’ll fix each one until it’s clean bro 🔥
+
+Now just 1 final step left → rerun the test 💪
+
+
+
+
+
+
+
+
+---------------------------------------------------
 @ExtendWith(MockitoExtension.class)
 public class MiChallengeServiceImplTest {
 
