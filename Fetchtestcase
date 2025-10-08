@@ -1,3 +1,79 @@
+@ExtendWith(MockitoExtension.class)
+public class MIChallengeServiceImplTest {
+
+    @InjectMocks
+    private MIChallengeServiceImpl miChallengeService;
+
+    @Mock
+    private CacheMgmtProxyService cacheMgmtProxyService;
+
+    @Mock
+    private JourneyState journeyState;
+
+    @Mock
+    private JourneyConfiguration configObject;
+
+    @Mock
+    private ErrorConfig errorConfig;
+
+    @Mock
+    private ErrorResponse errorResponse;
+
+    private Map<String, Object> headerMap;
+    private String credentialStoreStr;
+    private String partitionStr;
+    private String credentialIdStr;
+
+    @BeforeEach
+    void setUp() {
+        headerMap = new HashMap<>();
+        credentialStoreStr = "my-store";
+        partitionStr = "my-partition";
+        credentialIdStr = "credential-123";
+    }
+
+    @Test
+    void testGetMiChallenge_success() {
+        // Given
+        Map<String, JourneyConfiguration> credentialStores = new HashMap<>();
+        JourneyConfiguration journeyConfiguration = new JourneyConfiguration();
+        journeyConfiguration.setPartition(partitionStr); // Set expected partition
+
+        credentialStores.put(credentialStoreStr, journeyConfiguration);
+
+        when(cacheMgmtProxyService.getJourneyStateBySessionId(headerMap)).thenReturn(journeyState);
+        when(journeyState.getData()).thenReturn(new HashMap<>());
+        when(journeyState.getConfig()).thenReturn(configObject);
+        when(configObject.getCredentialStores()).thenReturn(credentialStores);
+
+        // When
+        String result = miChallengeService.getMiChallenge(headerMap, credentialStoreStr, partitionStr, credentialIdStr);
+
+        // Then
+        assertNotNull(result); // Or other assertions based on implementation
+    }
+
+    @Test
+    void testGetMiChallenge_missingValues_shouldThrowException() {
+        // JourneyState mocks
+        when(cacheMgmtProxyService.getJourneyStateBySessionId(headerMap)).thenReturn(journeyState);
+        when(journeyState.getData()).thenReturn(new HashMap<>());
+        when(journeyState.getConfig()).thenReturn(configObject);
+        when(configObject.getCredentialStores()).thenReturn(null); // Missing config
+
+        // ErrorConfig mocks
+        when(errorConfig.getErrorMap()).thenReturn(
+                Map.of("IAU_SSI_COORDINATOR_FETCH_API_ERR_101", errorResponse)
+        );
+
+        // Assert exception is thrown
+        assertThrows(CoordinatorException.class, () -> {
+            miChallengeService.getMiChallenge(headerMap, credentialStoreStr, partitionStr, credentialIdStr);
+        });
+    }
+}
+
+--------------------------------------------------
 @Override
 public MiPositions getMiChallenge(Map<String, String> headerMap, String credentialStore, String partition, String credentialId) {
 
