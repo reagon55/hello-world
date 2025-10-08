@@ -1,0 +1,96 @@
+@ExtendWith(MockitoExtension.class)
+public class MiChallengeServiceImplTest {
+
+    @InjectMocks
+    private MiChallengeServiceImpl miChallengeService;
+
+    @Mock
+    private LbgRestTemplate memorableInformationRestTemplate;
+
+    @Mock
+    private CapiMemorableInformationProperties memorableInformationProperties;
+
+    @Mock
+    private CacheMgmtProxyService cacheMgmtProxyService;
+
+    @Mock
+    private ErrorConfig errorConfig;
+
+    // Mock response structure
+    @Mock
+    private JourneyState journeyState;
+
+    // Replace JourneyConfig with just a generic configObject
+    @Mock
+    private Object configObject;
+
+    @Mock
+    private CredentialStore credentialStore;
+
+    @Mock
+    private ErrorResponse errorResponse;
+
+    @Test
+    void testGetMiChallenge_success() {
+        // Arrange
+        Map<String, String> headerMap = new HashMap<>();
+        String credentialId = "abc-123";
+        String credentialStoreStr = "store-1";
+        String partitionStr = "partition-x";
+
+        // Mocking journeyState.getData()
+        Map<String, String> dataMap = new HashMap<>();
+        dataMap.put("CREDENTIAL_ID_KEY", credentialId);
+        dataMap.put("CREDENTIAL_STORE_KEY", credentialStoreStr);
+
+        when(cacheMgmtProxyService.getJourneyStateBySessionId(headerMap)).thenReturn(journeyState);
+        when(journeyState.getData()).thenReturn(dataMap);
+
+        // Mocking journeyState.getConfig().getCredentialStores().get(0).getPartition()
+        when(journeyState.getConfig()).thenReturn(configObject);
+        when(((Map<?, ?>) configObject).get("credentialStores")).thenReturn(List.of(credentialStore));
+        when(credentialStore.getPartition()).thenReturn(partitionStr);
+
+        // URL
+        String apiUrl = "https://test.com/mi-challenge";
+        when(memorableInformationProperties.getMemorableInformationChallengeCode()).thenReturn(apiUrl);
+
+        // Final expected response
+        MiPositions mockMiPositions = new MiPositions();
+        when(memorableInformationRestTemplate.executeGetRequest(
+                eq(apiUrl),
+                any(HttpEntity.class),
+                eq(MiPositions.class),
+                eq(credentialStoreStr),
+                eq(partitionStr),
+                eq(credentialId)
+        )).thenReturn(mockMiPositions);
+
+        // Act
+        MiPositions result = miChallengeService.getMiChallenge(headerMap, null, null, null);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(mockMiPositions, result);
+    }
+
+    @Test
+    void testGetMiChallenge_missingValues_shouldThrowException() {
+        Map<String, String> headerMap = new HashMap<>();
+
+        when(cacheMgmtProxyService.getJourneyStateBySessionId(headerMap)).thenReturn(journeyState);
+        when(journeyState.getData()).thenReturn(new HashMap<>());
+
+        // Config returns null or bad structure
+        when(journeyState.getConfig()).thenReturn(configObject);
+        when(((Map<?, ?>) configObject).get("credentialStores")).thenReturn(null);
+
+        when(errorConfig.getErrorMap()).thenReturn(Map.of(
+            "IAU_SSI_COORDINATOR_FETCH_API_ERR_101", errorResponse
+        ));
+
+        assertThrows(CoordinatorException.class, () -> {
+            miChallengeService.getMiChallenge(headerMap, null, null, null);
+        });
+    }
+}
