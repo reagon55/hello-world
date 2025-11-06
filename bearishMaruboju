@@ -1,0 +1,24 @@
+ private String journeyState;
+    private String defaultAuthenticator;
+    private List<String> nextSteps;
+    private Boolean dynamicLinkingEnabled;
+    private List<String> possibleJourneyStates;
+    private List<MiPosition> miPositions;
+    private List<String> eligibleAuthenticators;
+
+
+----------------------
+
+{
+  "journeyState": "AWAITING_PASSWORD",
+  "defaultAuthenticator": "password",
+  "nextSteps": ["SUBMIT_PASSWORD","AWAITING_MEMORABLE_INFORMATION"],
+  "dynamicLinkingEnabled": false,
+  "possibleJourneyStates": ["AWAITING_PASSWORD","AWAITING_MEMORABLE_INFORMATION"],
+  "miPositions": [
+    {"pos": "5"},
+    {"pos": "1"},
+    {"pos": "3"}
+  ],
+  "eligibleAuthenticators": ["password","mi"]
+}
