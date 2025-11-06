@@ -22,3 +22,69 @@
   ],
   "eligibleAuthenticators": ["password","mi"]
 }
+
+----------------------------------
+
+package com.lbg.iau.ssi.coordinator.fetch.properties;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest(classes = CapiMemorableInformationProperties.class)
+@TestPropertySource(properties = {
+        "services.capi.memorable-information-challenge-generator.baseUrl=http://localhost:1080/",
+        "services.capi.memorable-information-challenge-generator.regChannelVersion=v1",
+        "services.capi.memorable-information-challenge-generator.operations.memorableInformationChallengeCode=memorable-information-challenge-generator/"
+})
+class CapiMemorableInformationPropertiesTest {
+
+    private CapiMemorableInformationProperties properties;
+
+    @BeforeEach
+    void setUp() {
+        properties = new CapiMemorableInformationProperties();
+        properties.setBaseUrl("http://localhost:1080/");
+        properties.setRegChannelVersion("v1");
+
+        CapiMemorableInformationProperties.Operations operations =
+                new CapiMemorableInformationProperties.Operations();
+        operations.setMemorableInformationChallengeCode("memorable-information-challenge-generator/");
+        properties.setOperations(operations);
+    }
+
+    @Test
+    void testPropertyBinding() {
+        assertEquals("http://localhost:1080/", properties.getBaseUrl());
+        assertEquals("v1", properties.getRegChannelVersion());
+        assertEquals("memorable-information-challenge-generator/",
+                properties.getOperations().getMemorableInformationChallengeCode());
+    }
+
+    @Test
+    void testGetFullUrl() {
+        String expected = "http://localhost:1080/memorable-information-challenge-generator/";
+        String actual = properties.getBaseUrl() +
+                properties.getOperations().getMemorableInformationChallengeCode();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void testValidatePropertiesThrowsExceptionWhenInvalid() {
+        CapiMemorableInformationProperties invalidProps = new CapiMemorableInformationProperties();
+
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                invalidProps::validateProperties);
+
+        assertEquals("CapiMemorableInformationProperties is not properly configured", exception.getMessage());
+    }
+
+    @Test
+    void testValidatePropertiesPassesWhenValid() {
+        assertDoesNotThrow(properties::validateProperties);
+    }
+}
+
