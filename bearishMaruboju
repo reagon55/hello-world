@@ -88,3 +88,147 @@ class CapiMemorableInformationPropertiesTest {
     }
 }
 
+-----------------------------------------------------------------------------------------------------------------------------
+package com.lbg.iau.ssi.coordinator.fetch.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lbg.iau.ssi.coordinator.fetch.exception.CoordinatorException;
+import com.lbg.iau.ssi.coordinator.fetch.exception.ErrorConfig;
+import com.lbg.iau.ssi.coordinator.fetch.properties.CapimMemorableInformationProperties;
+import com.lbg.iau.ssi.coordinator.fetch.proxy.CacheMgmntProxyService;
+import com.lbg.lau.ssi.contractor.model.JourneyState;
+import com.lbg.lau.ssi.contractor.model.MiPositions;
+import com.lbg.lau.ssi.contractor.common.LbgRestTemplate;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
+
+import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+
+import static com.lbg.iau.ssi.coordinator.fetch.util.Constants.CREDENTIAL_ID_KEY;
+import static com.lbg.iau.ssi.coordinator.fetch.util.Constants.CREDENTIAL_STORE_KEY;
+import static com.lbg.iau.ssi.coordinator.fetch.util.Constants.PARTITION_KEY;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class MiChallengeServiceImplTest {
+
+    @Mock
+    private LbgRestTemplate memorableInformationRestTemplate;
+
+    @Mock
+    private CapimMemorableInformationProperties memorableInformationProperties;
+
+    @Mock
+    private CacheMgmntProxyService cacheMgmntProxyService;
+
+    @Mock
+    private ErrorConfig errorConfig;
+
+    @InjectMocks
+    private MiChallengeServiceImpl miChallengeService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /** ✅ Success Scenario */
+    @Test
+    void testGetMiChallenge_success() throws Exception {
+
+        // ---- Load fake JSON from test/resources ----
+        String json = Files.readString(new ClassPathResource("expectations/mi-challenge-success.json").getFile().toPath());
+        MiPositions expectedResponse = objectMapper.readValue(json, MiPositions.class);
+
+        // ---- Mock Journey State ----
+        JourneyState journeyState = mock(JourneyState.class);
+        Map<String, String> data = new HashMap<>();
+        data.put(CREDENTIAL_ID_KEY, "cred123");
+        data.put(CREDENTIAL_STORE_KEY, "store1");
+        data.put(PARTITION_KEY, "p1");
+
+        when(journeyState.getData()).thenReturn(data);
+        when(cacheMgmntProxyService.getJourneyStateBySessionId(any())).thenReturn(journeyState);
+
+        // ---- Mock RestTemplate ----
+        when(memorableInformationRestTemplate.executeGetRequest(
+                any(),
+                eq(MiPositions.class),
+                any(),
+                any(),
+                any()
+        )).thenReturn(expectedResponse);
+
+        when(memorableInformationProperties.getOperations().getMemorableInformationChallengeCode())
+                .thenReturn("/challenge/api");
+
+        // ---- Call Method ----
+        MiPositions actual = miChallengeService.getMiChallenge(new HashMap<>(), "sessionHeaders");
+
+        // ---- Assertions ----
+        assertNotNull(actual);
+        assertEquals(expectedResponse, actual);
+        verify(memorableInformationRestTemplate, times(1))
+                .executeGetRequest(any(), eq(MiPositions.class), any(), any(), any());
+    }
+
+    /** ❌ Negative Scenario (credentialId missing) */
+    @Test
+    void testGetMiChallenge_missingRequiredValues_throwsException() {
+
+        JourneyState journeyState = mock(JourneyState.class);
+        Map<String, String> data = new HashMap<>(); // ← returning empty map forces null
+        when(journeyState.getData()).thenReturn(data);
+        when(cacheMgmntProxyService.getJourneyStateBySessionId(any())).thenReturn(journeyState);
+
+        assertThrows(CoordinatorException.class,
+                () -> miChallengeService.getMiChallenge(new HashMap<>(), "sessionHeaders"));
+    }
+}
+
+
+-----------------fake joson----------------------
+mi-challenge-success.json
+
+{
+  "sessionId": "SESSION-1001",
+  "status": "SUCCESS",
+  "message": "Memorable Information challenge generated successfully",
+  "challengePositions": [
+    {
+      "positionId": "MI-01",
+      "label": "Enter 1st character",
+      "maskIndex": 1
+    },
+    {
+      "positionId": "MI-03",
+      "label": "Enter 3rd character",
+      "maskIndex": 3
+    },
+    {
+      "positionId": "MI-05",
+      "label": "Enter 5th character",
+      "maskIndex": 5
+    }
+  ]
+}
+---------------
+mi-challenge-fail.json
+
+{
+  "sessionId": "SESSION-1001",
+  "status": "FAILURE",
+  "message": "Unable to generate MI challenge",
+  "error": {
+    "code": "MI_ERR_401",
+    "details": "Invalid credential store or partition"
+  }
+}
+
+
