@@ -257,6 +257,148 @@ void testGetMiChallenge_failureResponse_fromDownstream() throws Exception {
             miChallengeService.getMiChallenge(new HashMap<>(), "header")
     );
 }
+------------------------
+package com.lbg.iau.ssi.coordinator.fetch.service; // <- adjust to your package
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+import java.nio.file.Files;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.http.HttpEntity;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+@ExtendWith(MockitoExtension.class)
+class MiChallengeServiceImplTest {
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Mock
+    private LbgRestTemplate memorableInformationRestTemplate;
+
+    @Mock
+    private CapiMemorableInformationProperties memorableInformationProperties;
+
+    @Mock
+    private CacheMgmtProxyService cacheMgmtProxyService;
+
+    @Mock
+    private ErrorConfig errorConfig;
+
+    @InjectMocks
+    private MiChallengeServiceImpl miChallengeService;
+
+    @Test
+    void testGetMiChallenge_success() throws Exception {
+        // load expected response from test resources
+        String json = Files.readString(new ClassPathResource("expectations/mi-challenge-success-Service.json").getFile().toPath());
+        MiPositions expectedResponse = objectMapper.readValue(json, MiPositions.class);
+
+        // --- mock journey state and cache
+        JourneyState journeyState = Mockito.mock(JourneyState.class);
+        Map<String, String> data = new HashMap<>();
+        data.put("CREDENTIAL_ID_KEY", "cred123");
+        data.put("CREDENTIAL_STORE_KEY", "store1");
+        data.put("partitionKey", "p1");
+
+        when(journeyState.getData()).thenReturn(data);
+        when(cacheMgmtProxyService.getJourneyStateBySessionId(any())).thenReturn(journeyState);
+
+        // --- mock RestTemplate call (typed)
+        when(memorableInformationRestTemplate.executeGetRequest(
+                anyString(),
+                ArgumentMatchers.<HttpEntity<Object>>any(),
+                eq(MiPositions.class),
+                anyMap(),
+                any(ErrorConfig.class),
+                anyMap()
+        )).thenReturn(expectedResponse);
+
+        // --- IMPORTANT: stub nested Operations to avoid NPE
+        CapiMemorableInformationProperties.Operations ops = Mockito.mock(CapiMemorableInformationProperties.Operations.class);
+        when(memorableInformationProperties.getOperations()).thenReturn(ops);
+        // service expects a string path and maybe authenticators list — give sensible defaults
+        when(ops.getMemorableInformationChallengeCode()).thenReturn("/challenge/api");
+        when(ops.getAuthenticators()).thenReturn(Collections.emptyList());
+
+        // --- call method under test
+        Map<String, String> sessionHeaders = new HashMap<>();
+        sessionHeaders.put("sessionHeaders", "dummy-value");
+
+        MiPositions actual = miChallengeService.getMiChallenge(sessionHeaders);
+
+        // --- assertions & verify
+        assertNotNull(actual);
+        assertEquals(expectedResponse, actual);
+
+        verify(memorableInformationRestTemplate, times(1)).executeGetRequest(
+                anyString(),
+                ArgumentMatchers.<HttpEntity<Object>>any(),
+                eq(MiPositions.class),
+                anyMap(),
+                any(ErrorConfig.class),
+                anyMap()
+        );
+    }
+
+    @Test
+    void testGetMiChallenge_failureResponseFromDownstream() throws Exception {
+        // load a failure mi-positions JSON (if you have one)
+        String json = Files.readString(new ClassPathResource("expectations/mi-challenge-fail.json").getFile().toPath());
+        MiPositions failResponse = objectMapper.readValue(json, MiPositions.class);
+
+        // similar basic stubs as success
+        JourneyState journeyState = Mockito.mock(JourneyState.class);
+        Map<String, String> data = new HashMap<>();
+        data.put("CREDENTIAL_ID_KEY", "cred123");
+        data.put("CREDENTIAL_STORE_KEY", "store1");
+        data.put("partitionKey", "p1");
+
+        when(journeyState.getData()).thenReturn(data);
+        when(cacheMgmtProxyService.getJourneyStateBySessionId(any())).thenReturn(journeyState);
+
+        // stub rest template to return failure payload
+        when(memorableInformationRestTemplate.executeGetRequest(
+                anyString(),
+                ArgumentMatchers.<HttpEntity<Object>>any(),
+                eq(MiPositions.class),
+                anyMap(),
+                any(ErrorConfig.class),
+                anyMap()
+        )).thenReturn(failResponse);
+
+        // stub nested ops
+        CapiMemorableInformationProperties.Operations ops = Mockito.mock(CapiMemorableInformationProperties.Operations.class);
+        when(memorableInformationProperties.getOperations()).thenReturn(ops);
+        when(ops.getMemorableInformationChallengeCode()).thenReturn("/challenge/api");
+        when(ops.getAuthenticators()).thenReturn(Collections.emptyList());
+
+        // Expect your service to throw CoordinatorException (adjust if different)
+        org.junit.jupiter.api.Assertions.assertThrows(CoordinatorException.class, () -> {
+            miChallengeService.getMiChallenge(Collections.emptyMap());
+        });
+    }
+}
+
 
 
 
