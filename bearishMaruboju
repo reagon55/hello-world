@@ -231,4 +231,32 @@ mi-challenge-fail.json
   }
 }
 
+------------------------------------------------
+@Test
+void testGetMiChallenge_failureResponse_fromDownstream() throws Exception {
+    String json = Files.readString(
+        new ClassPathResource("expectations/mi-challenge-fail.json").getFile().toPath()
+    );
+
+    MiPositions failResponse = objectMapper.readValue(json, MiPositions.class);
+
+    JourneyState journeyState = mock(JourneyState.class);
+    Map<String, String> data = new HashMap<>();
+    data.put(CREDENTIAL_ID_KEY, "cred123");
+    data.put(CREDENTIAL_STORE_KEY, "store1");
+    data.put(PARTITION_KEY, "p1");
+
+    when(journeyState.getData()).thenReturn(data);
+    when(cacheMgmntProxyService.getJourneyStateBySessionId(any()))
+            .thenReturn(journeyState);
+
+    when(memorableInformationRestTemplate.executeGetRequest(any(), eq(MiPositions.class), any(), any(), any()))
+            .thenReturn(failResponse);
+
+    assertThrows(CoordinatorException.class, () ->
+            miChallengeService.getMiChallenge(new HashMap<>(), "header")
+    );
+}
+
+
 
