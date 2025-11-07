@@ -1,4 +1,125 @@
- private String journeyState;
+package com.lbg.iau.ssi.coordinator.fetch.service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.lbg.iau.ssi.coordinator.fetch.model.MiPositions;
+import com.lbg.iau.ssi.coordinator.fetch.properties.CapiMemorableInformationProperties;
+import com.lbg.iau.ssi.coordinator.fetch.properties.CapiMemorableInformationProperties.Operations;
+import com.lbg.iau.ssi.coordinator.fetch.rest.LbgRestTemplate;
+import com.lbg.iau.ssi.coordinator.fetch.config.ErrorConfig;
+import com.lbg.iau.ssi.coordinator.fetch.exception.CoordinatorException;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.nio.file.Files;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class MiChallengeServiceImplTest {
+
+    @Mock
+    private LbgRestTemplate memorableInformationRestTemplate;
+
+    @Mock
+    private CapiMemorableInformationProperties memorableInformationProperties;
+
+    @Mock
+    private ErrorConfig errorConfig;
+
+    // any other mocks your service needs (from screenshots)
+    @Mock
+    private CacheMgmtProxyService cacheMgmtProxyService;
+
+    @InjectMocks
+    private MiChallengeServiceImpl miChallengeService;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Test
+    void testGetMiChallenge_success() throws Exception {
+        // load expected JSON from your test resources (adjust path to match your project)
+        String json = Files.readString(new java.io.ClassPathResource("expectations/mi-challenge-success-Service.json").getFile().toPath());
+        MiPositions expectedResponse = objectMapper.readValue(json, MiPositions.class);
+
+        // --- mock / stub nested objects to avoid NPE ---
+        Operations ops = mock(Operations.class);
+        when(memorableInformationProperties.getOperations()).thenReturn(ops);
+
+        // service expects a path string from operations
+        when(ops.getMemorableInformationChallengeCode()).thenReturn("/challenge/api");
+        // do NOT call a non-existent getter (your IDE complained). If your real Operations has authenticators,
+        // stub the real method, otherwise skip it.
+
+        // --- mock rest template downstream call ---
+        when(memorableInformationRestTemplate.executeGetRequest(
+                anyString(),
+                ArgumentMatchers.<org.springframework.http.HttpEntity<Object>>any(),
+                eq(MiPositions.class),
+                anyMap(),
+                any(ErrorConfig.class),
+                anyMap()
+        )).thenReturn(expectedResponse);
+
+        // --- call method under test ---
+        Map<String, String> sessionHeaders = new HashMap<>();
+        sessionHeaders.put("sessionHeaders", "dummy-value");
+
+        MiPositions actual = miChallengeService.getMiChallenge(sessionHeaders);
+
+        // --- assertions & verify ---
+        assertNotNull(actual);
+        assertEquals(expectedResponse, actual);
+
+        verify(memorableInformationRestTemplate, times(1)).executeGetRequest(
+                anyString(),
+                ArgumentMatchers.<org.springframework.http.HttpEntity<Object>>any(),
+                eq(MiPositions.class),
+                anyMap(),
+                any(ErrorConfig.class),
+                anyMap()
+        );
+    }
+
+    @Test
+    void testGetMiChallenge_failureFromDownstream_throwsCoordinatorException() throws Exception {
+        // load failure JSON
+        String json = Files.readString(new java.io.ClassPathResource("expectations/mi-challenge-fail.json").getFile().toPath());
+        MiPositions failResponse = objectMapper.readValue(json, MiPositions.class);
+
+        // stub nested ops same as above to avoid NPE
+        Operations ops = mock(Operations.class);
+        when(memorableInformationProperties.getOperations()).thenReturn(ops);
+        when(ops.getMemorableInformationChallengeCode()).thenReturn("/challenge/api");
+
+        // make rest template return a failure payload (your service should translate to CoordinatorException)
+        when(memorableInformationRestTemplate.executeGetRequest(
+                anyString(),
+                ArgumentMatchers.<org.springframework.http.HttpEntity<Object>>any(),
+                eq(MiPositions.class),
+                anyMap(),
+                any(ErrorConfig.class),
+                anyMap()
+        )).thenReturn(failResponse);
+
+        // assert that service surfaces the expected exception type (adjust if your service returns another)
+        Map<String, String> sessionHeaders = new HashMap<>();
+        sessionHeaders.put("sessionHeaders", "dummy-value");
+
+        assertThrows(CoordinatorException.class, () -> miChallengeService.getMiChallenge(sessionHeaders));
+    }
+}
+------------
+
+
+private String journeyState;
     private String defaultAuthenticator;
     private List<String> nextSteps;
     private Boolean dynamicLinkingEnabled;
