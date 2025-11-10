@@ -1,6 +1,50 @@
 @ExtendWith(MockitoExtension.class)
 class MiChallengeServiceImplTest {
 
+    @Mock private CacheMgmtProxyService cacheMgmtProxyService;
+    @Mock private LbgRestTemplate memorableInformationRestTemplate;
+    @Mock private CapiMemorableInformationProperties memorableInformationProperties;
+    @Mock private ErrorConfig errorConfig;
+
+    @InjectMocks
+    private MiChallengeServiceImpl miChallengeService;
+
+    @Test
+    void testMiChallenge() {
+
+        try (MockedStatic<LoggerManager> logger = Mockito.mockStatic(LoggerManager.class)) {
+
+            ApplicationLogger fakeLogger = Mockito.mock(ApplicationLogger.class);
+            logger.when(() -> LoggerManager.getApplicationLogger(any()))
+                  .thenReturn(fakeLogger);
+
+            JourneyState journeyState = Mockito.mock(JourneyState.class);
+            Map<String, String> map = Map.of(
+                    "credentialId", "CRED001",
+                    "credentialStore", "stor1",
+                    "partitionKey", "p1"
+            );
+
+            when(journeyState.getData()).thenReturn(map);
+            when(cacheMgmtProxyService.getJourneyStateBySessionId(any())).thenReturn(journeyState);
+
+            when(memorableInformationProperties.getOperations().getMemorableInformationChallengeCode())
+                    .thenReturn("/miChallenge");
+
+            when(memorableInformationRestTemplate.executeGetRequest(any(), any(), any(), any(), any()))
+                    .thenReturn(new MiPositions());
+
+            MiPositions result = miChallengeService.getMiChallenge(Collections.emptyMap());
+
+            assertNotNull(result);
+        }
+    }
+}
+
+----------------------------------------------------------------------------------------------------------
+@ExtendWith(MockitoExtension.class)
+class MiChallengeServiceImplTest {
+
     @Mock private ErrorConfig errorConfig;
     @Mock private JourneyConfiguration journeyConfiguration;
     @Mock private CacheMgmtProxyService cacheMgmtProxyService;
