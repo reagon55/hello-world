@@ -1,4 +1,47 @@
-package com.lbg.iau.ssi.coordinator.fetch.service;
+@Test
+void testGetMiChallenge_failureResponseFromDownstream() throws Exception {
+
+    // load fail JSON
+    String json = Files.readString(new ClassPathResource("expectations/mi-challenge-fail.json").getFile().toPath());
+    MiPositions failResponse = objectMapper.readValue(json, MiPositions.class);
+
+    JourneyState journeyState = Mockito.mock(JourneyState.class);
+    Map<String, String> data = new HashMap<>();
+    data.put("CREDENTIAL_ID_KEY", "cred123");
+    data.put("CREDENTIAL_STORE_KEY", "store1");
+    data.put("partitionKey", "p1");
+
+    when(journeyState.getData()).thenReturn(data);
+    when(cacheMgmtProxyService.getJourneyStateBySessionId(any())).thenReturn(journeyState);
+
+    when(memorableInformationRestTemplate.executeGetRequest(
+            anyString(),
+            any(HttpEntity.class),
+            eq(MiPositions.class),
+            anyMap(),
+            any(ErrorConfig.class),
+            anyMap()
+    )).thenReturn(failResponse);
+
+    CapiMemorableInformationProperties.Operations ops =
+            mock(CapiMemorableInformationProperties.Operations.class);
+    when(memorableInformationProperties.getOperations()).thenReturn(ops);
+    when(ops.getMemorableInformationChallengeCode()).thenReturn("/challenge/api");
+
+    // ✅ MOCK LOGGER (IMPORTANT)
+    try (MockedStatic<LoggerManager> mockedLogger = Mockito.mockStatic(LoggerManager.class)) {
+        ApplicationLogger mockAppLogger = Mockito.mock(ApplicationLogger.class);
+        mockedLogger.when(() -> LoggerManager.getApplicationLogger(any()))
+                .thenReturn(mockAppLogger);
+
+        assertThrows(CoordinatorException.class, () ->
+                miChallengeService.getMiChallenge(Collections.emptyMap())
+        );
+    }
+}
+
+
+------------------package com.lbg.iau.ssi.coordinator.fetch.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lbg.iau.ssi.coordinator.fetch.model.MiPositions;
