@@ -1,3 +1,48 @@
+@ExtendWith(MockitoExtension.class)
+class MiChallengeServiceImplTest {
+
+    @Mock private ErrorConfig errorConfig;
+    @Mock private JourneyConfiguration journeyConfiguration;
+    @Mock private CacheMgmtProxyService cacheMgmtProxyService;
+    @Mock private CapiMemorableInformationProperties memorableInformationProperties;
+    @Mock private LbgRestTemplate memorableInformationRestTemplate;
+
+    @InjectMocks
+    private MiChallengeServiceImpl miChallengeService;
+
+    @Test
+    void testMiChallenge() {
+
+        // Arrange
+        JourneyState journeyState = mock(JourneyState.class);
+
+        Map<String, String> dataMap = new HashMap<>();
+        dataMap.put("credentialId", "CRED001");
+        dataMap.put("credentialStore", "stor1");
+        dataMap.put("partitionKey", "p1");
+
+        when(journeyState.getData()).thenReturn(dataMap);
+        when(cacheMgmtProxyService.getJourneyStateBySessionId(any()))
+                .thenReturn(journeyState);
+
+        // Mock MIPositions returned from the REST template
+        when(memorableInformationRestTemplate.executeGetRequest(any(), any(), any(), any(), any()))
+                .thenReturn(new MiPositions());
+
+        // Mock properties to avoid logger NPE
+        CapiMemorableInformationProperties.Operations ops =
+                mock(CapiMemorableInformationProperties.Operations.class);
+        when(memorableInformationProperties.getOperations()).thenReturn(ops);
+
+        // Act
+        MiPositions result = miChallengeService.getMiChallenge(Collections.emptyMap());
+
+        // Assert
+        assertNotNull(result);
+    }
+}
+
+------------------------------
 @Test
 void testGetMiChallenge_failureResponseFromDownstream() throws Exception {
 
