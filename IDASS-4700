@@ -1,3 +1,107 @@
+LegacyCredentialProxyService
+
+package com.lbg.iau.ssi.coordinator.identity.resolver.service;
+
+import com.lbg.iau.ssi.coordinator.identity.resolver.config.CapiLegacyProperties;
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.LegacyCredentialResponse;
+import com.lbg.iau.ssi.common.logging.ApplicationLogger;
+import com.lbg.iau.ssi.common.logging.LoggerManager;
+import com.lbg.iau.ssi.common.rest.LbgRestTemplate;
+import com.lbg.iau.ssi.common.util.ErrorUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
+
+import java.util.Map;
+import java.util.UUID;
+
+@Service
+public class LegacyCredentialProxyService {
+
+    private static final ApplicationLogger LOGGER =
+            LoggerManager.getApplicationLogger(LegacyCredentialProxyService.class);
+
+    @Autowired
+    private LbgRestTemplate lbgRestTemplate;
+
+    @Autowired
+    private CapiLegacyProperties capiLegacyProperties;
+
+    @Autowired
+    private ErrorUtil errorUtil;
+
+
+    /**
+     * SDID-style method to call Legacy Consumable API
+     */
+    public LegacyCredentialResponse getLegacyCredential(
+            Map<String, String> headerMap,
+            String linkedCustomerId,
+            String userName) {
+
+        LOGGER.info(headerMap, () -> "Calling Legacy Credential CAPI");
+
+        // Build Headers (SDID style)
+        HttpEntity<?> requestEntity = new HttpEntity<>(buildHeaders(headerMap));
+
+        // Build URL (SDID style)
+        String url = buildUrl(linkedCustomerId, userName);
+
+        LOGGER.debug(headerMap, () -> "Constructed Legacy Credential URL: " + url);
+
+        try {
+            return lbgRestTemplate.executeGet(
+                    url,
+                    requestEntity,
+                    LegacyCredentialResponse.class,
+                    linkedCustomerId,
+                    userName
+            );
+
+        } catch (Exception ex) {
+            LOGGER.error(headerMap, () -> "Error calling Legacy Credential CAPI", ex);
+            throw errorUtil.toDownstreamError(ex);
+        }
+    }
+
+
+
+    /**
+     * Build headers like SDID buildCapiHeaders()
+     */
+    private HttpHeaders buildHeaders(Map<String, String> headerMap) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAll(headerMap);
+        headers.set("x-lbg-session-id", UUID.randomUUID().toString());
+        headers.set("x-lbg-txn-correlation-id", UUID.randomUUID().toString());
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        return headers;
+    }
+
+
+    /**
+     * Build URL in SDID style using UriComponentsBuilder
+     */
+    private String buildUrl(String linkedCustomerId, String userName) {
+
+        return UriComponentsBuilder.fromHttpUrl(capiLegacyProperties.getBaseUrl())
+                .path(capiLegacyProperties.getCredentialsEndpoint())
+                .path("/")
+                .path(capiLegacyProperties.getStore())
+                .path("/")
+                .path(capiLegacyProperties.getPartition())
+                .queryParam("linkedCustomerId", linkedCustomerId)
+                .queryParam("userName", userName)
+                .toUriString();
+    }
+
+}
+
+
+-------------------------------------------------------------------------------------------------------------------
 public LegacyCredentialResponse getLegacyCredential(String linkedCustomerId, String userName) {
 
     try {
