@@ -1,3 +1,52 @@
+public LegacyCredentialResponse getLegacyCredential(String linkedCustomerId, String userName) {
+
+    try {
+
+        // Build URL:  https://localhost:8080/iau-legacy-identity-consumable-api/v1/credentials/{store}/{partition}
+        String url = UriComponentsBuilder
+                .fromUriString(capiLegacyProperties.getBaseUrl())
+                .path("/credentials/")
+                .path(capiLegacyProperties.getCredentialStore())
+                .path("/")
+                .path(capiLegacyProperties.getPartition())
+                .queryParam("linkedCustomerId", linkedCustomerId)
+                .queryParam("userName", userName)
+                .build()
+                .toString();
+
+        // Prepare headers
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("x-lbg-session-id", UUID.randomUUID().toString());
+        headers.add("x-lbg-txn-correlation-id", UUID.randomUUID().toString());
+        headers.add("x-lbg-brand", "SCW");
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+        // Call downstream
+        LOGGER.info("Calling Legacy Consumable API: {}", url);
+
+        ResponseEntity<LegacyCredentialResponse> response =
+                lbgRestTemplate.exchange(
+                        url,
+                        HttpMethod.GET,
+                        entity,
+                        LegacyCredentialResponse.class
+                );
+
+        return response.getBody();
+
+    } catch (HttpStatusCodeException ex) {
+        LOGGER.error("Downstream error: {}", ex.getResponseBodyAsString());
+        throw errorUtil.toDownstreamError(ex);
+    } catch (Exception ex) {
+        LOGGER.error("Unknown error calling legacy API", ex);
+        throw errorUtil.toGenericError(ex);
+    }
+}
+
+
+------------------------------------------
 1. Write the full mock method
 
 public Expectation[] legacyCredentials() {
