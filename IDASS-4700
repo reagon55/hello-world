@@ -1,0 +1,63 @@
+1. Write the full mock method
+
+public Expectation[] legacyCredentials() {
+    return new Expectation[] {
+        new Expectation(
+            request()
+                .withMethod("GET")
+                .withPath("/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW")
+                .withQueryStringParameter("linkedCustomerId", "2745...1748")
+                .withQueryStringParameter("userName", "barry@emaildomain.com")
+        ).thenRespond(
+            response()
+                .withStatusCode(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(readFileFromClassPathOrPath("expectations/legacy-credentials.json"))
+        )
+    };
+}
+------------------------
+2. Add the JSON response file
+
+src/test/resources/expectations/legacy-credentials.json
+
+{
+  "credentialId": "123e4567-e89b-12d3-a456-426614174000",
+  "linkedCustomerId": "27458002-02c2-4571-9041-6b518a241748",
+  "userName": "barry@emaildomain.com",
+  "status": "ACTIVE",
+  "passwordStatus": "A",
+  "isMfaSet": true,
+  "group": ["BLH", "JAG", "HAL", "LDR", "IB", "BOS", "SZX", "SCW"],
+  "accountCreationDate": "2024-01-11T13:26:41.253Z",
+  "lastStatusChangeDate": "2024-01-11T13:26:41.253Z",
+  "lastPasswordChangeDate": "2024-01-11T13:26:41.253Z",
+  "lastLoggedInTime": "2024-01-11T13:26:41.253Z",
+  "passwordExpiryDate": "2024-01-11T13:26:41.253Z",
+  "currentGlobalCounter": 0
+}
+---------------------------------------------
+3. Register the new mock inside initializeExpectations()
+
+return Stream.of(
+    credentials(), cache(), customers(), session(),
+    card_reader(), mi(), sdid(),
+    legacyCredentials()     // 👉 ADD THIS
+)
+----------------------------------------------------------------------
+4. Verify the path matches Swagger exactly
+
+GET /credentials/{credentialStore}/{partition}
+For your test case:
+
+credentialStore → ida
+
+partition → PI_SCW
+
+So final path:
+/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW
+------------------------------------------------------------------------------------
+5. Start MockServer and test the URL manually
+
+http://localhost:1080/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW?linkedCustomerId=2745...1748&userName=barry@emaildomain.com
+
