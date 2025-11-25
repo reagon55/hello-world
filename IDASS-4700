@@ -1,3 +1,10 @@
+curl -X GET "http://localhost:8080/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW?linkedCustomerId=27458002-02c2-4571-9041-6b5018a3241&userName=barry@emaildomain.com" \
+  -H "x-lbg-session-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
+  -H "x-lbg-txn-correlation-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
+  -H "x-lbg-brand: SCW" \
+  -H "Content-Type: application/json"
+
+------------------------------------------------------------
 @ExtendWith(MockitoExtension.class)
 class LegacyCredentialProxyServiceTest {
 
