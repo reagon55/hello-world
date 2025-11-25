@@ -1,3 +1,113 @@
+package com.lbg.iau.ssi.coordinator.identity.resolver.service;
+
+import com.lbg.iau.ssi.coordinator.common.LbgRestTemplate;
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.LegacyCredentialResponse;
+import com.lbg.iau.ssi.coordinator.identity.resolver.properties.CapiLegacyProperties;
+import com.lbg.iau.ssi.coordinator.identity.resolver.util.ErrorUtil;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doReturn;
+
+@ExtendWith(MockitoExtension.class)
+class LegacyCredentialProxyServiceTest {
+
+    @Mock private LbgRestTemplate lbgRestTemplate;
+    @Mock private CapiLegacyProperties capiLegacyProperties;
+    @Mock private CapiLegacyProperties.Operations operations;
+    @Mock private ErrorUtil errorUtil;
+
+    @InjectMocks
+    private LegacyCredentialProxyService legacyCredentialProxyService;
+
+    Map<String, String> headerMap;
+
+    private static final String BASE_URL = "http://mock-capi";
+    private static final String ENDPOINT = "/credentials/{credentialStore}/{partition}";
+
+    @BeforeEach
+    void setUp() {
+        headerMap = new HashMap<>();
+        headerMap.put("x-lbg-session-id", "sess");
+        headerMap.put("x-lbg-txn-correlation-id", "corr");
+        headerMap.put("x-lbg-brand", "SCW");
+
+        // Mock properties
+        when(capiLegacyProperties.getBaseUrl()).thenReturn(BASE_URL);
+        when(capiLegacyProperties.getOperations()).thenReturn(operations);
+        when(operations.getCredentialEndpoint()).thenReturn(ENDPOINT);
+        when(operations.getStore()).thenReturn("ida");
+        when(operations.getPartition()).thenReturn("PI_SCW");
+
+        // Allow buildUrl override
+        doReturn("http://mock-url").when(legacyCredentialProxyService)
+                .buildUrl(anyString(), anyString());
+    }
+
+    @Test
+    void testGetLegacyCredential_Success() {
+
+        String linkedCustomerId = "cust123";
+        String userName = "john";
+
+        LegacyCredentialResponse mockResponse = new LegacyCredentialResponse();
+        ResponseEntity<LegacyCredentialResponse> responseEntity =
+                new ResponseEntity<>(mockResponse, HttpStatus.OK);
+
+        when(lbgRestTemplate.executeGetRequest(
+                eq("http://mock-url"),
+                any(HttpEntity.class),
+                eq(LegacyCredentialResponse.class),
+                eq(linkedCustomerId),
+                eq(userName)
+        )).thenReturn(mockResponse);
+
+        LegacyCredentialResponse result = legacyCredentialProxyService
+                .getLegacyCredential(headerMap, linkedCustomerId, userName);
+
+        assertNotNull(result);
+        assertEquals(mockResponse, result);
+    }
+
+    @Test
+    void testGetLegacyCredential_Exception() {
+
+        String linkedCustomerId = "cust123";
+        String userName = "john";
+
+        when(lbgRestTemplate.executeGetRequest(
+                anyString(),
+                any(HttpEntity.class),
+                eq(LegacyCredentialResponse.class),
+                anyString(),
+                anyString()
+        )).thenThrow(new RuntimeException("CAPI Failure"));
+
+        when(errorUtil.buildCoordinatorException(any(), any()))
+                .thenReturn(new RuntimeException("Converted"));
+
+        assertThrows(RuntimeException.class, () ->
+                legacyCredentialProxyService.getLegacyCredential(
+                        headerMap, linkedCustomerId, userName));
+    }
+}
+
+
+--------------------------------------------------------------------------
 LegacyCredentialProxyService
 
 package com.lbg.iau.ssi.coordinator.identity.resolver.service;
