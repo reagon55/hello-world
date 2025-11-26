@@ -1,3 +1,54 @@
+curl -X GET "http://localhost:8080/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW?linkedCustomerId=27458002-02c2-4571-9041-6b518a3241&userName=barry@emaildomain.com" \
+  -H "x-lbg-session-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
+  -H "x-lbg-txn-correlation-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
+  -H "x-lbg-brand: SCW" \
+  -H "Content-Type: application/json"
+
+------------------------------------------------------------------------
+public Expectation[] legacyCredentials() {
+    return new Expectation[] {
+        new Expectation(
+            request()
+                .withMethod("GET")
+                .withPath("/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW")
+                .withQueryStringParameter("linkedCustomerId", "2745...1748")
+                .withQueryStringParameter("userName", "barry@emaildomain.com")
+                .withHeader("x-lbg-session-id", matching(".+"))
+                .withHeader("x-lbg-txn-correlation-id", matching(".+"))
+                .withHeader("x-lbg-brand", "SCW")
+        ).thenRespond(
+            response()
+                .withStatusCode(200)
+                .withHeader("Content-Type", "application/json")
+                .withBody(readFileFromClasspathOrPath("expectations/legacy-credentials.json"))
+        )
+    };
+}
+
+
+---------------------------------------------------
+@Data
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class LegacyCredential {
+
+    private String credentialId;
+    private String linkedCustomerId;
+    private String userName;
+    private String status;
+    private String passwordStatus;
+    private boolean isMfaSet;
+    private List<String> group;
+    private String accountCreationDate;
+    private String lastStatusChangeDate;
+    private String lastPasswordChangeDate;
+    private String lastLoggedInTime;
+    private String passwordExpiryDate;
+    private int currentGlobalCounter;
+}
+
+
+----------------------------------------------------------------------------------
 curl -X GET "http://localhost:8080/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW?linkedCustomerId=27458002-02c2-4571-9041-6b5018a3241&userName=barry@emaildomain.com" \
   -H "x-lbg-session-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
   -H "x-lbg-txn-correlation-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
