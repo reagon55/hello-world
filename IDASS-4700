@@ -1,3 +1,81 @@
+
+@Test
+void testGetEligibleAuthenticators_Success() {
+
+    String customerId = "cust123";
+    String credentialStore = "scw";
+
+    CustomerInformationSystemResponse mockResponse = new CustomerInformationSystemResponse();
+    
+    // Mock the URL builder
+    doReturn("http://mock-eligible-url")
+            .when(legacyCredentialProxyService)
+            .buildEligibleAuthenticatorUrl(anyString(), anyString());
+
+    // Mock RestTemplate call
+    when(lbgRestTemplate.executeGetRequest(
+            eq("http://mock-eligible-url"),
+            any(HttpEntity.class),
+            eq(CustomerInformationSystemResponse.class),
+            eq(customerId),
+            eq(credentialStore)
+    )).thenReturn(mockResponse);
+
+    // Call service
+    CustomerInformationSystemResponse result =
+            legacyCredentialProxyService.getEligibleAuthenticators(
+                    headerMap, customerId, credentialStore);
+
+    // Assertions
+    assertNotNull(result);
+    assertEquals(mockResponse, result);
+}
+----------------------------------------------------
+@Test
+void testGetEligibleAuthenticators_Failure() {
+
+    String customerId = "cust123";
+    String credentialStore = "scw";
+
+    RuntimeException capiException = new RuntimeException("CAPI DOWN");
+
+    // Mock URL builder
+    doReturn("http://mock-eligible-url")
+            .when(legacyCredentialProxyService)
+            .buildEligibleAuthenticatorUrl(anyString(), anyString());
+
+    // Mock RestTemplate to throw an exception
+    when(lbgRestTemplate.executeGetRequest(
+            eq("http://mock-eligible-url"),
+            any(HttpEntity.class),
+            eq(CustomerInformationSystemResponse.class),
+            eq(customerId),
+            eq(credentialStore)
+    )).thenThrow(capiException);
+
+    // Mock errorUtil to wrap exception into CoordinatorException
+    CoordinatorException expectedException =
+            new CoordinatorException("UNKNOWN_ERROR", "Error calling Eligible Authenticators CAPI");
+
+    when(errorUtil.buildCoordinatorException(
+            errorUtil.getUnknownError(), capiException
+    )).thenReturn(expectedException);
+
+    // Assert throw
+    CoordinatorException thrown =
+            assertThrows(CoordinatorException.class, () ->
+                    legacyCredentialProxyService.getEligibleAuthenticators(
+                            headerMap,
+                            customerId,
+                            credentialStore
+                    )
+            );
+
+    // Validation
+    assertEquals(expectedException, thrown);
+}
+
+------------------------------------------------------------------------------------------
 FINAL CODE: getEligibleAuthenticators
 
 public CustomerInformationSystemResponse getEligibleAuthenticators(
