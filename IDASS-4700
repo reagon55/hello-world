@@ -1,3 +1,157 @@
+FINAL CODE: getEligibleAuthenticators
+
+public CustomerInformationSystemResponse getEligibleAuthenticators(
+        Map<String, String> headerMap,
+        String customerId,
+        String credentialStore) {
+
+    LOGEGER.info(headerMap, () -> "Calling Legacy Eligible Authenticators CAPI");
+
+    // Build headers
+    HttpEntity<?> requestEntity = new HttpEntity<>(buildHeaders(headerMap));
+
+    // Build URL similar to getLegacyCredential()
+    String url = buildEligibleAuthenticatorUrl(customerId, credentialStore);
+
+    LOGEGER.debug(headerMap, () -> "Constructed Eligible Authenticators URL: " + url);
+
+    try {
+        return lbgRestTemplate.executeGetRequest(
+                url,
+                requestEntity,
+                CustomerInformationSystemResponse.class,
+                customerId,
+                credentialStore
+        );
+
+    } catch (Exception ex) {
+        LOGEGER.error(headerMap, () -> "Error calling Eligible Authenticators CAPI", ex);
+        throw errorUtil.buildCoordinatorException(errorUtil.getUnknownError(), ex);
+    }
+}
+
+-------------------------------
+Step 2: Add build URL method
+
+private String buildEligibleAuthenticatorUrl(String customerId, String credentialStore) {
+    return String.format(
+            CapiLegacyProperties.operations().getEligibleAuthEndpoint(),
+            customerId,
+            credentialStore
+    );
+}
+-----------------------------------------
+SUCCESS TEST – Eligible Authenticators returned successfully
+
+@ExtendWith(MockitoExtension.class)
+class LegacyCredentialProxyServiceTest {
+
+    @InjectMocks
+    private LegacyCredentialProxyService proxyService;
+
+    @Mock
+    private LbgRestTemplate lbgRestTemplate;
+
+    @Mock
+    private ErrorUtil errorUtil;
+
+    @Mock
+    private ApplicationError unknownError;
+
+    private Map<String, String> headerMap;
+
+    @BeforeEach
+    void setup() {
+        headerMap = new HashMap<>();
+        headerMap.put("x-lbg-session-id", "test-session");
+        headerMap.put("x-lbg-txn-correlation-id", "corr-123");
+    }
+
+    @Test
+    void testGetEligibleAuthenticators_success() {
+
+        String customerId = "cust123";
+        String credentialStore = "scw";
+
+        String url = "http://localhost:8080/customers/" + customerId +
+                "/customerInformationSystem/" + customerId + "/authenticators";
+
+        // Mock response
+        CustomerInformationSystemResponse mockResponse = new CustomerInformationSystemResponse();
+        mockResponse.setEligibleAuthenticators(List.of(
+                new EligibleAuthenticator("PASSWORD"),
+                new EligibleAuthenticator("OTP")
+        ));
+
+        // Mock restTemplate call
+        when(lbgRestTemplate.executeGetRequest(
+                eq(url),
+                any(),
+                eq(CustomerInformationSystemResponse.class),
+                eq(customerId),
+                eq(credentialStore)
+        )).thenReturn(mockResponse);
+
+        // Spy URL builder if required
+        Mockito.doReturn(url)
+                .when(proxyService)
+                .buildEligibleAuthenticatorUrl(customerId, credentialStore);
+
+        // Call method
+        CustomerInformationSystemResponse response =
+                proxyService.getEligibleAuthenticators(headerMap, customerId, credentialStore);
+
+        // Validate
+        assertNotNull(response);
+        assertEquals(2, response.getEligibleAuthenticators().size());
+        assertEquals("PASSWORD", response.getEligibleAuthenticators().get(0).getType());
+        assertEquals("OTP", response.getEligibleAuthenticators().get(1).getType());
+    }
+}
+--------------------------------------
+2. FAILURE TEST – When CAPI throws exception
+
+@Test
+void testGetEligibleAuthenticators_failure_throwsCoordinatorException() {
+
+    String customerId = "cust123";
+    String credentialStore = "scw";
+
+    String url = "http://localhost:8080/customers/" + customerId +
+            "/customerInformationSystem/" + customerId + "/authenticators";
+
+    Exception capiException = new RuntimeException("CAPI down");
+
+    // Mock URL builder
+    Mockito.doReturn(url)
+            .when(proxyService)
+            .buildEligibleAuthenticatorUrl(customerId, credentialStore);
+
+    when(lbgRestTemplate.executeGetRequest(
+            eq(url),
+            any(),
+            eq(CustomerInformationSystemResponse.class),
+            eq(customerId),
+            eq(credentialStore)
+    )).thenThrow(capiException);
+
+    // Mock errorUtil to return CoordinatorException
+    CoordinatorException mockException =
+            new CoordinatorException(unknownError, capiException);
+
+    when(errorUtil.buildCoordinatorException(unknownError, capiException))
+            .thenReturn(mockException);
+
+    // Execute & assert
+    CoordinatorException thrown = assertThrows(
+            CoordinatorException.class,
+            () -> proxyService.getEligibleAuthenticators(headerMap, customerId, credentialStore)
+    );
+
+    assertEquals(mockException, thrown);
+}
+
+-------------------------------------
 curl -X GET "http://localhost:8080/iau-legacy-identity-consumable-api/v1/credentials/ida/PI_SCW?linkedCustomerId=27458002-02c2-4571-9041-6b518a3241&userName=barry@emaildomain.com" \
   -H "x-lbg-session-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
   -H "x-lbg-txn-correlation-id: f81d4fae-7dec-11d0-a765-00a0c91e6bf" \
