@@ -1,3 +1,145 @@
+package com.lbg.iau.ssi.coordinator.identity.resolver.service;
+
+import com.lbg.iau.ssi.coordinator.identity.resolver.common.LbgRestTemplate;
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.CustomerInformationSystemResponse;
+import com.lbg.iau.ssi.coordinator.identity.resolver.model.LegacyCredentialResponse;
+import com.lbg.iau.ssi.coordinator.identity.resolver.properties.CapiLegacyProperties;
+import com.lbg.iau.ssi.coordinator.identity.resolver.util.ErrorUtil;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpEntity;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class LegacyCredentialProxyServiceTest {
+
+    @Mock
+    private LbgRestTemplate lbgRestTemplate;
+
+    @Mock
+    private CapiLegacyProperties capLegacyProperties;
+
+    @Mock
+    private CapiLegacyProperties.Operations operations;
+
+    @Mock
+    private ErrorUtil errorUtil;
+
+    @Spy
+    @InjectMocks
+    private LegacyCredentialProxyService legacyCredentialProxyService;
+
+    private Map<String, String> headerMap;
+
+    private static final String BASE_URL = "http://mock-capi1";
+    private static final String CREDENTIAL_ENDPOINT = "/credentials/{credentialStore}/{partition}";
+    private static final String ELIGIBLE_ENDPOINT   = "/eligible/{credentialStore}/{partition}";
+
+    @BeforeEach
+    void setUp() {
+        // headers used by the service
+        headerMap = new HashMap<>();
+        headerMap.put("x-lbg-session-id", "sess");
+        headerMap.put("x-lbg-txn-correlation-id", "cor");
+        headerMap.put("x-lbg-brand", "SCW");
+
+        // mock properties -> operations flow
+        when(capLegacyProperties.getBaseUrl()).thenReturn(BASE_URL);
+        when(capLegacyProperties.getOperations()).thenReturn(operations);
+
+        when(operations.getCredentialEndpoint()).thenReturn(CREDENTIAL_ENDPOINT);
+        when(operations.getEligibleAuthEndpoint()).thenReturn(ELIGIBLE_ENDPOINT);
+        when(operations.getStore()).thenReturn("scw");
+        when(operations.getPartition()).thenReturn("uk");
+    }
+
+    @Test
+    void testGetLegacyCredential_Success() {
+        String linkedCustomerId = "cust123";
+        String userName = "john";
+
+        LegacyCredentialResponse mockResponse = new LegacyCredentialResponse();
+
+        // we don't care about the exact URL string, only that the call happens with these args
+        when(lbgRestTemplate.executeGetRequest(
+                anyString(),
+                any(HttpEntity.class),
+                eq(LegacyCredentialResponse.class),
+                eq(linkedCustomerId),
+                eq(userName))
+        ).thenReturn(mockResponse);
+
+        // Call service
+        LegacyCredentialResponse result =
+                legacyCredentialProxyService.getLegacyCredential(headerMap, linkedCustomerId, userName);
+
+        // Assertions
+        assertNotNull(result);
+        assertEquals(mockResponse, result);
+    }
+
+    @Test
+    void testGetEligibleAuthenticators_Success() {
+        String customerId = "cust123";
+        String credentialStore = "scw";
+
+        CustomerInformationSystemResponse mockResponse = new CustomerInformationSystemResponse();
+
+        // again, URL itself is not asserted, only parameters & type
+        when(lbgRestTemplate.executeGetRequest(
+                anyString(),
+                any(HttpEntity.class),
+                eq(CustomerInformationSystemResponse.class),
+                eq(customerId),
+                eq(credentialStore))
+        ).thenReturn(mockResponse);
+
+        // Call service
+        CustomerInformationSystemResponse result =
+                legacyCredentialProxyService.getEligibleAuthenticators(headerMap, customerId, credentialStore);
+
+        // Assertions
+        assertNotNull(result);
+        assertEquals(mockResponse, result);
+    }
+
+    /*
+    // If later you want a negative test, you can add something like:
+    //
+    // @Test
+    // void testGetLegacyCredential_ErrorPath() {
+    //     String linkedCustomerId = "cust123";
+    //     String userName = "john";
+    //
+    //     when(lbgRestTemplate.executeGetRequest(
+    //             anyString(),
+    //             any(HttpEntity.class),
+    //             eq(LegacyCredentialResponse.class),
+    //             eq(linkedCustomerId),
+    //             eq(userName))
+    //     ).thenThrow(new RuntimeException("Boom"));
+    //
+    //     assertThrows(RuntimeException.class,
+    //             () -> legacyCredentialProxyService.getLegacyCredential(headerMap, linkedCustomerId, userName));
+    // }
+    */
+}
+
+------------------------------------------------------------------
 @BeforeEach
 void setUp() {
     headerMap = new HashMap<>();
