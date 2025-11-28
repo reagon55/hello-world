@@ -6,6 +6,70 @@ void testGetEligibleAuthenticators_Success() {
     String credentialStore = "scw";
 
     CustomerInformationSystemResponse mockResponse = new CustomerInformationSystemResponse();
+
+    // Mock URL builder (package-private method)
+    doReturn("http://mock-eligible-url")
+            .when(legacyCredentialProxyService)
+            .buildEligibleAuthenticatorUrl(anyString(), anyString());
+
+    // Mock RestTemplate call
+    when(lbgRestTemplate.executeGetRequest(
+            eq("http://mock-eligible-url"),
+            any(HttpEntity.class),
+            eq(CustomerInformationSystemResponse.class),
+            eq(customerId),
+            eq(credentialStore)
+    )).thenReturn(mockResponse);
+
+    // Call service
+    CustomerInformationSystemResponse result =
+            legacyCredentialProxyService.getEligibleAuthenticators(
+                    headerMap, customerId, credentialStore);
+
+    // Validate
+    assertNotNull(result);
+    assertEquals(mockResponse, result);
+}
+-----------------------------------------------------------------
+
+@Test
+void testGetEligibleAuthenticators_Failure() {
+
+    String customerId = "cust123";
+    String credentialStore = "scw";
+
+    // Mock URL builder
+    doReturn("http://mock-eligible-url")
+            .when(legacyCredentialProxyService)
+            .buildEligibleAuthenticatorUrl(anyString(), anyString());
+
+    // Mock RestTemplate to throw exception
+    when(lbgRestTemplate.executeGetRequest(
+            anyString(),
+            any(HttpEntity.class),
+            eq(CustomerInformationSystemResponse.class),
+            eq(customerId),
+            eq(credentialStore)
+    )).thenThrow(new RuntimeException("CAPI error"));
+
+    assertThrows(
+            CoordinatorException.class,
+            () -> legacyCredentialProxyService.getEligibleAuthenticators(
+                    headerMap, customerId, credentialStore)
+    );
+}
+
+
+
+
+------------------
+@Test
+void testGetEligibleAuthenticators_Success() {
+
+    String customerId = "cust123";
+    String credentialStore = "scw";
+
+    CustomerInformationSystemResponse mockResponse = new CustomerInformationSystemResponse();
     
     // Mock the URL builder
     doReturn("http://mock-eligible-url")
