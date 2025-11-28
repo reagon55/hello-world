@@ -1,3 +1,17 @@
+@BeforeEach
+void setUp() {
+    headerMap = new HashMap<>();
+    headerMap.put("x-lbg-session-id", "sess");
+    headerMap.put("x-lbg-txn-correlation-id", "cor");
+    headerMap.put("x-lbg-brand", "SCW");
+
+    when(operations.getCredentialEndpoint()).thenReturn("/credentials/{credentialStore}/{partition}");
+    when(operations.getEligibleAuthEndpoint()).thenReturn("/eligible/{credentialStore}/{partition}");
+    when(operations.getStore()).thenReturn("scw");
+    when(operations.getPartition()).thenReturn("uk");
+}
+
+------------------------------
 @ExtendWith(MockitoExtension.class)
 class LegacyCredentialProxyServiceTest {
 
