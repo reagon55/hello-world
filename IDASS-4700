@@ -1,4 +1,62 @@
+@ExtendWith(MockitoExtension.class)
+class LegacyCredentialProxyServiceTest {
 
+    @Mock
+    private LbgRestTemplate lbgRestTemplate;
+
+    @Mock
+    private CapiLegacyProperties.Operations operations;
+
+    @Mock
+    private ErrorUtil errorUtil;
+
+    @Spy
+    @InjectMocks
+    private LegacyCredentialProxyService legacyCredentialProxyService;
+
+    private Map<String, String> headerMap;
+
+    private static final String BASE_URL = "http://mock-capi1";
+    private static final String ENDPOINT = "/credentials/{credentialStore}/{partition}";
+
+    @BeforeEach
+    void setUp() {
+        // initialise header map
+        headerMap = new HashMap<>();
+        headerMap.put("x-lbg-session-id", "sess");
+        headerMap.put("x-lbg-txn-correlation-id", "cor");
+        headerMap.put("x-lbg-brand", "SCW");
+
+        // if your service uses these in buildUrl(...)
+        when(operations.getBaseUrl()).thenReturn(BASE_URL);
+        when(operations.getCredentialEndpoint()).thenReturn(ENDPOINT);
+    }
+
+    @Test
+    void testGetLegacyCredential_Success() {
+        String linkedCustomerId = "cust123";
+        String userName        = "john";
+
+        LegacyCredentialResponse mockResponse = new LegacyCredentialResponse();
+
+        when(lbgRestTemplate.executeGetRequest(
+                anyString(),                       // URL constructed inside service
+                any(HttpEntity.class),
+                eq(LegacyCredentialResponse.class),
+                eq(linkedCustomerId),
+                eq(userName)))
+            .thenReturn(mockResponse);
+
+        // Call service
+        LegacyCredentialResponse result =
+                legacyCredentialProxyService.getLegacyCredential(headerMap, linkedCustomerId, userName);
+
+        assertNotNull(result);
+        assertEquals(mockResponse, result);
+    }
+}
+
+--------------
 @Test
 void testGetEligibleAuthenticators_Success() {
 
