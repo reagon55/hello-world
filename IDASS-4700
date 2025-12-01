@@ -1,3 +1,38 @@
+@Test
+void testGetLegacyCredential_Success() {
+    
+    String linkedCustomerId = "cust123";
+    String userName = "john";
+
+    // Create mock JSON
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode mockJson = mapper.createObjectNode()
+        .put("credentialId", "cred123")
+        .put("userName", userName)
+        .put("passwordStatus", "ACTIVE")
+        .put("globalCounter", 5)
+        .put("isMfaSet", true);
+
+    // Mock RestTemplate call
+    when(lbgRestTemplate.executeGetRequest(
+            anyString(),
+            any(HttpEntity.class),
+            eq(JsonNode.class),
+            eq(linkedCustomerId),
+            eq(userName)
+    )).thenReturn(mockJson);
+
+    // Call service
+    JsonNode result =
+            legacyCredentialProxyService.getLegacyCredential(headerMap, linkedCustomerId, userName);
+
+    // Assertions
+    assertNotNull(result);
+    assertEquals("cred123", result.get("credentialId").asText());
+    assertEquals("john", result.get("userName").asText());
+}
+
+----------------------------------------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.identity.resolver.service;
 
 import com.lbg.iau.ssi.coordinator.identity.resolver.common.LbgRestTemplate;
