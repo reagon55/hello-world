@@ -1,3 +1,55 @@
+Add these fields to IdentityResolverResponse
+
+// -------- Legacy Credential Fields --------
+private String legacyCredentialId;
+private String legacyLinkedCustomerId;
+private String legacyUserName;
+private String legacyStatus;
+private String legacyPasswordStatus;
+private Boolean legacyIsMISet;
+private List<String> legacyGroups;
+
+private String legacyAccountCreationDate;
+private String legacyLastStatusChangeDate;
+private String legacyPasswordChangeDate;
+private String legacyLastLoggedInTime;
+private String legacyPasswordExpiryDate;
+
+private Integer legacyGlobalCounter;
+
+-------------------------------------------------------------------
+private void populateLegacyCredentialFields(IdentityResolverResponse response, JsonNode legacyResponse) {
+
+    if (legacyResponse == null || legacyResponse.isNull()) {
+        return;
+    }
+
+    // Example fields based on legacy CAPI response
+    response.setLegacyCredentialId(legacyResponse.path("credentialId").asText(null));
+    response.setLegacyLinkedCustomerId(legacyResponse.path("linkedCustomerId").asText(null));
+    response.setLegacyUserName(legacyResponse.path("userName").asText(null));
+    response.setLegacyStatus(legacyResponse.path("status").asText(null));
+    response.setLegacyPasswordStatus(legacyResponse.path("passwordStatus").asText(null));
+    response.setLegacyIsMISet(legacyResponse.path("isMISet").asBoolean(false));
+
+    // group array → convert to List<String>
+    if (legacyResponse.has("group")) {
+        List<String> groups = new ArrayList<>();
+        legacyResponse.get("group").forEach(node -> groups.add(node.asText()));
+        response.setLegacyGroups(groups);
+    }
+
+    response.setLegacyAccountCreationDate(legacyResponse.path("accountCreationDate").asText(null));
+    response.setLegacyLastStatusChangeDate(legacyResponse.path("lastStatusChangeDate").asText(null));
+    response.setLegacyPasswordChangeDate(legacyResponse.path("lastPasswordChangeDate").asText(null));
+    response.setLegacyLastLoggedInTime(legacyResponse.path("lastLoggedInTime").asText(null));
+    response.setLegacyPasswordExpiryDate(legacyResponse.path("passwordExpiryDate").asText(null));
+    response.setLegacyGlobalCounter(legacyResponse.path("currentGlobalCounter").asInt(0));
+}
+
+
+
+-----------------------------------------------------------------------
 @Test
 void testGetLegacyCredential_Success() {
     
