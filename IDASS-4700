@@ -1,3 +1,34 @@
+@Test
+void shouldThrow404WhenJourneyCacheIsNull() {
+
+    // headers
+    Map<String, String> headers = Map.of("session-id", "ABC123");
+
+    // Mock: journeyCache returned null
+    when(cacheMgmtProxyService.getJourneyStateBySessionId(headers))
+            .thenReturn(null);
+
+    // Prepare Error Object
+    Error error404 = new Error();
+    error404.setCode("IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404");
+
+    when(errorConfig.getErrorMap())
+            .thenReturn(Map.of("IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404", error404));
+
+    // Mock authType & request (simple placeholders)
+    AuthType authType = AuthType.MI;
+    ValidateApiRequest validateRequest = new ValidateApiRequest();
+
+    // Assert expected exception
+    CoordinatorException ex = assertThrows(
+            CoordinatorException.class,
+            () -> validateValueService.validateValue(headers, authType, validateRequest)
+    );
+
+    assertEquals("IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404", ex.getError().getCode());
+}
+
+----------------------------------------------------------------------
 Add these fields to IdentityResolverResponse
 
 // -------- Legacy Credential Fields --------
