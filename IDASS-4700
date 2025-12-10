@@ -1,3 +1,38 @@
+@Test
+void shouldThrow404WhenJourneyCacheIsNull() {
+
+    // Load real errorConfig just like other tests
+    ErrorConfig errorConfig = new ErrorConfig();
+    TestUtils.loadErrorConfig(errorConfig);
+    validateService = new ValidateValueService(cacheMgmtProxyService, authServicesMap, errorConfig);
+
+    Map<String, String> headers = Map.of("session-id", "ABC123");
+
+    // Mock MI flow
+    when(authServicesMap.containsKey(AuthType.MI.getValue()))
+            .thenReturn(true);
+    when(authServicesMap.get(AuthType.MI.getValue()))
+            .thenReturn(miProxyService);
+
+    // Journey cache returns null → this triggers your new null check
+    when(cacheMgmtProxyService.getJourneyStateBySessionId(headers))
+            .thenReturn(null);
+
+    AuthType authType = AuthType.MI;
+    ValidateApiRequest validateRequest = new ValidateApiRequest();
+
+    CoordinatorException thrown = assertThrows(
+            CoordinatorException.class,
+            () -> validateService.validateValue(headers, authType, validateRequest)
+    );
+
+    assertEquals(
+            ErrorCodes.IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404.name(),
+            thrown.getError().getCode()
+    );
+}
+
+-----------------
 Added a null check for journeyCache and now throw the 404 error before using journeyCache.getData() 
 to avoid NPE and align with the error-mapping yaml.
 
