@@ -1,3 +1,14 @@
+Added a null check for journeyCache and now throw the 404 error before using journeyCache.getData() 
+to avoid NPE and align with the error-mapping yaml.
+
+Wrote a new JUnit test:
+shouldThrow404WhenJourneyCacheIsNull()
+
+The test verifies that the service throws the expected error:
+IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404
+as per the acceptance criteria for this ticket.
+
+-----------------------------------
 I investigated the issue in ValidateValueService and tried multiple approaches to reproduce a 404 scenario for unit testing.
 
 Findings:
