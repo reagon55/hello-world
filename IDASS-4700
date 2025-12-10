@@ -1,3 +1,12 @@
+The test verifies that when the cached session lookup fails (simulating an expired or invalid authSessionId),
+the service propagates the final CoordinatorException produced by the handleErrors() method.
+
+This confirms that:
+
+handleErrors() correctly interprets the underlying REST failure
+
+The expected 404 error code (IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404) is returned
+-----------------
 @Test
 void shouldThrow404WhenJourneyCacheIsNull() throws Exception {
 
