@@ -1,3 +1,22 @@
+I investigated the issue in ValidateValueService and tried multiple approaches to reproduce a 404 scenario for unit testing.
+
+Findings:
+1. The existing ValidateValueService implementation does not throw the 404 error anywhere in the validateValue() flow.
+   - Only 401 (unsupported authType) and 500 (JSON conversion failure) are thrown.
+   - The JourneyCache == null case currently does not use the 404 error mapping; instead, it proceeds further which causes a NullPointerException.
+
+2. Because the service does not trigger the 404 errorConfig mapping path, the corresponding unit test fails as the expected error object is never constructed.
+
+3. To complete the test, the code needs to explicitly throw:
+       IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404
+   when cacheMgmtProxyService.getJourneyStateBySessionId(headers) returns null.
+
+Suggestion:
+- Add a null check for journeyCache and throw the 404 error before using journeyCache.getData() to avoid NPE and align with the error-mapping yaml.
+
+Once this change is added, I will update and validate the unit test.
+
+-------------------------------------------------
 @Test
 void shouldThrow404WhenJourneyCacheIsNull() {
 
