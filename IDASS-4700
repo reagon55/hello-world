@@ -1,6 +1,57 @@
 @Test
 void shouldThrow404WhenJourneyCacheIsNull() throws Exception {
 
+    // Load real error config exactly like other tests
+    ErrorConfig errorConfig = new ErrorConfig();
+    TestUtils.loadErrorConfig(errorConfig);
+
+    // Re-create service with real errorConfig
+    validateService = new ValidateValueService(
+            cacheMgmtProxyService,
+            authServicesMap,
+            errorConfig
+    );
+
+    // ---------- Mock REST Failure so handleErrors() executes ----------
+
+    HttpStatusCodeException http404 =
+            new HttpClientErrorException(HttpStatus.NOT_FOUND, "Session not found");
+
+    // Mock restTemplate INSIDE CacheMgmtProxyService
+    when(cacheMgmtProxyService.getJourneyStateBySessionId(anyMap()))
+            .thenThrow(http404);
+
+    // ---------- Mock MI authType valid ----------
+    when(authServicesMap.containsKey(AuthType.MI.getValue()))
+            .thenReturn(true);
+
+    when(authServicesMap.get(AuthType.MI.getValue()))
+            .thenReturn(miProxyService);
+
+    // ---------- Headers for the call ----------
+    Map<String, String> headers = Map.of("session-id", "ABC123");
+
+    // Dummy request body
+    ValidateApiRequest request = new ValidateApiRequest();
+    AuthType authType = AuthType.MI;
+
+    // ---------- ACT + ASSERT ----------
+    CoordinatorException thrown = assertThrows(
+            CoordinatorException.class,
+            () -> validateService.validateValue(headers, authType, request)
+    );
+
+    // Verify error code coming from error-mapping.yml
+    assertEquals(
+            ErrorCodes.IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404.name(),
+            thrown.getError().getCode()
+    );
+}
+
+------------------------------
+@Test
+void shouldThrow404WhenJourneyCacheIsNull() throws Exception {
+
     // 1️⃣ Load real error config exactly like other tests
     ErrorConfig errorConfig = new ErrorConfig();
     TestUtils.loadErrorConfig(errorConfig);
