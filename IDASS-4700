@@ -1,3 +1,40 @@
+@Test
+void shouldThrow404WhenJourneyCacheIsNull() throws Exception {
+
+    // Load real error config
+    ErrorConfig realErrorConfig = new ErrorConfig();
+    TestUtils.loadErrorConfig(realErrorConfig);
+
+    validateService = new ValidateValueService(
+            cacheMgmtProxyService,
+            authServicesMap,
+            realErrorConfig
+    );
+
+    Map<String, String> headers = Map.of("session-id", "ABC123");
+
+    // Mock MI valid
+    when(authServicesMap.containsKey(AuthType.MI.getValue())).thenReturn(true);
+    when(authServicesMap.get(AuthType.MI.getValue())).thenReturn(miProxyService);
+
+    // Journey cache null
+    when(cacheMgmtProxyService.getJourneyStateBySessionId(headers)).thenReturn(null);
+
+    AuthType authType = AuthType.MI;
+    ValidateApiRequest validateRequest = new ValidateApiRequest();
+
+    CoordinatorException thrown = assertThrows(
+            CoordinatorException.class,
+            () -> validateService.validateValue(headers, authType, validateRequest)
+    );
+
+    assertEquals(
+            ErrorCodes.IAU_SSI_COORDINATOR_VALIDATE_API_ERR_404.name(),
+            thrown.getError().getCode()
+    );
+}
+
+-----------------
 real
 @Test
 void shouldThrow404WhenJourneyCacheIsNull() throws Exception {
