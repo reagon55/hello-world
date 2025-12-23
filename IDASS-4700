@@ -1,3 +1,16 @@
+Fix implemented and validated locally.
+
+Changes:
+• Updated Validate-API error handling to use central error configuration
+• Mapped expired authSessionId (cache 404) to a specific business error message instead of a generic response
+
+Testing:
+• Added unit test to simulate expired session scenario
+• Verified Validate-API throws CoordinatorException with message:
+"Session ID not found or has expired"
+
+This ensures the API now returns a clear and deterministic error message as per acceptance criteria and prevents future regression.
+--------------------------------------------------------------------------------------------------------------------------
 The test verifies that when the cached session lookup fails (simulating an expired or invalid authSessionId),
 the service propagates the final CoordinatorException produced by the handleErrors() method.
 
