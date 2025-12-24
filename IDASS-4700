@@ -16,6 +16,77 @@ void shouldCallLegacyCapi_whenIdentityStoreIsLegacy() {
     when(configStoreProxyService.getJourneyConfigurationById(anyMap()))
             .thenReturn(journeyConfig);
 
+    // identity store response → LEGACY
+    IdentityStoreResponse identityStoreResponse =
+            new IdentityStoreResponse(
+                    CREDENTIAL_ID,
+                    null,           // customerId
+                    null,           // group
+                    null,           // status
+                    null,           // passwordStatus
+                    null,           // accountCreationDate
+                    LINKED_CUSTOMER_ID, // 🔥 THIS MAKES IT LEGACY
+                    null            // currentGlobalCounter
+            );
+
+    when(identityStoreService.getUserCredential(
+            anyMap(),
+            eq(CREDENTIAL_ID),
+            any(CredentialStore.class),
+            any()
+    )).thenReturn(identityStoreResponse);
+
+    // legacy CAPI response
+    CustomerInformationSystemResponse legacyResponse =
+            prepareCustomerInformationSystemResponse();
+
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+            anyMap(),
+            eq(LINKED_CUSTOMER_ID),
+            anyString()
+    )).thenReturn(legacyResponse);
+
+    // ---------- WHEN ----------
+    IdentityResolverResponse response =
+            serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    // ---------- THEN ----------
+    assertNotNull(response);
+
+    // legacy path MUST be used
+    verify(legacyCredentialProxyService, times(1))
+            .getEligibleAuthenticators(
+                    anyMap(),
+                    eq(LINKED_CUSTOMER_ID),
+                    anyString()
+            );
+
+    // non-legacy path MUST NOT be used
+    verify(customerInfoSystemProxyService, never())
+            .getEligibleAuthenticatorsById(
+                    any(), any(), any(), any(), any(), any()
+            );
+}
+
+-------------------------------------------------------------------------
+@Test
+void shouldCallLegacyCapi_whenIdentityStoreIsLegacy() {
+
+    // ---------- GIVEN ----------
+
+    // headers
+    Map<String, String> headerMap =
+            createHeaderMap(createRequestHeaders());
+
+    // request
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId(CREDENTIAL_ID);
+
+    // journey config
+    JourneyConfiguration journeyConfig = createJourneyConfig();
+    when(configStoreProxyService.getJourneyConfigurationById(anyMap()))
+            .thenReturn(journeyConfig);
+
     // -------- IdentityStoreResponse (LEGACY = TRUE) --------
     IdentityStoreResponse identityStoreResponse =
             new IdentityStoreResponse(
