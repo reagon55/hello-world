@@ -1,4 +1,102 @@
 @Test
+void shouldCallNonLegacyApi_whenIdentityStoreIsNotLegacy() {
+
+    // GIVEN
+    Map<String, String> headerMap = createHeaderMap(createRequestHeaders());
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId(CREDENTIAL_ID);
+
+    JourneyConfiguration journeyConfig = createJourneyConfig();
+    when(configStoreProxyService.getJourneyConfigurationById(anyMap()))
+            .thenReturn(journeyConfig);
+
+    IdentityStoreResponse identityStoreResponse = new IdentityStoreResponse();
+    identityStoreResponse.setCredentialId(CREDENTIAL_ID);
+    identityStoreResponse.setLinkedCustomerId(LINKED_CUSTOMER_ID);
+    identityStoreResponse.setLegacy(false);
+
+    when(identityStoreService.getUserCredential(
+            anyMap(),
+            eq(CREDENTIAL_ID),
+            any(CredentialStore.class),
+            eq(IS_IDENTIFIER_TYPE_TOKEN)
+    )).thenReturn(identityStoreResponse);
+
+    when(customerInfoSystemProxyService.getEligibleAuthenticatorsById(
+            anyMap(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any()
+    )).thenReturn(prepareCustomerInformationSystemResponse());
+
+    // WHEN
+    IdentityResolverResponse response =
+            serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    // THEN
+    assertNotNull(response);
+
+    verify(customerInfoSystemProxyService, times(1))
+            .getEligibleAuthenticatorsById(any(), any(), any(), any(), any(), any());
+
+    verify(legacyCredentialProxyService, never())
+            .getEligibleAuthenticators(anyMap(), anyString(), anyString());
+}
+
+-----------------------------------------------------------------------------
+@Test
+void shouldCallLegacyCapi_whenIdentityStoreIsLegacy() {
+
+    // GIVEN
+    Map<String, String> headerMap = createHeaderMap(createRequestHeaders());
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId(CREDENTIAL_ID);
+
+    JourneyConfiguration journeyConfig = createJourneyConfig();
+    when(configStoreProxyService.getJourneyConfigurationById(anyMap()))
+            .thenReturn(journeyConfig);
+
+    IdentityStoreResponse identityStoreResponse = new IdentityStoreResponse();
+    identityStoreResponse.setCredentialId(CREDENTIAL_ID);
+    identityStoreResponse.setLinkedCustomerId(LINKED_CUSTOMER_ID);
+    identityStoreResponse.setLegacy(true);
+
+    when(identityStoreService.getUserCredential(
+            anyMap(),
+            eq(CREDENTIAL_ID),
+            any(CredentialStore.class),
+            eq(IS_IDENTIFIER_TYPE_TOKEN)
+    )).thenReturn(identityStoreResponse);
+
+    CustomerInformationSystemResponse legacyResponse =
+            prepareCustomerInformationSystemResponse();
+
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+            anyMap(),
+            eq(LINKED_CUSTOMER_ID),
+            anyString()
+    )).thenReturn(legacyResponse);
+
+    // WHEN
+    IdentityResolverResponse response =
+            serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    // THEN
+    assertNotNull(response);
+
+    verify(legacyCredentialProxyService, times(1))
+            .getEligibleAuthenticators(anyMap(), eq(LINKED_CUSTOMER_ID), anyString());
+
+    verify(customerInfoSystemProxyService, never())
+            .getEligibleAuthenticatorsById(any(), any(), any(), any(), any(), any());
+}
+
+-------------------------------------------------------------------------------------
+@Test
 void shouldCallEligibleAuthenticatorsApi_WhenIdentityStoreIsNotLegacy() {
     // ---------- GIVEN ----------
     Map<String, String> headerMap = createHeaderMap(createRequestHeaders());
