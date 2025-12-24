@@ -1,3 +1,123 @@
+@Test
+void shouldCallEligibleAuthenticatorsApi_WhenIdentityStoreIsNotLegacy() {
+    // ---------- GIVEN ----------
+    Map<String, String> headerMap = createHeaderMap(createRequestHeaders());
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId(CREDENTIAL_ID);
+
+    JourneyConfiguration journeyConfig = createJourneyConfig();
+    when(configStoreProxyService.getJourneyConfigurationById(anyMap()))
+            .thenReturn(journeyConfig);
+
+    // Identity store → LEGACY = false
+    IdentityStoreResponse identityStoreResponse =
+            new IdentityStoreResponse(
+                    CREDENTIAL_ID,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    LINKED_CUSTOMER_ID,
+                    false   //  NON-LEGACY
+            );
+
+    when(identityStoreService.getUserCredential(
+            anyMap(),
+            eq(CREDENTIAL_ID),
+            any(CredentialStore.class),
+            eq(ISIDENTIFIERYPETOKEN)))
+            .thenReturn(identityStoreResponse);
+
+    when(customerInfoSystemProxyService.getEligibleAuthenticatorsById(
+            anyMap(),
+            anyString(),
+            anyString(),
+            anyList(),
+            any(),
+            any()))
+            .thenReturn(prepareCustomerInformationSystemResponse());
+
+    // ---------- WHEN ----------
+    IdentityResolverResponse response =
+            serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    // ---------- THEN ----------
+    assertNotNull(response);
+
+    //  Non-legacy API MUST be called
+    verify(customerInfoSystemProxyService, times(1))
+            .getEligibleAuthenticatorsById(any(), any(), any(), any(), any(), any());
+
+    //  Legacy CAPI MUST NOT be called
+    verify(legacyCredentialProxyService, never())
+            .getEligibleAuthenticators(anyMap(), anyString(), anyString());
+}
+
+------------------------------------------------------------------------------------------------
+@Test
+void shouldCallLegacyCapi_WhenIdentityStoreIsLegacy() {
+    // ---------- GIVEN ----------
+    Map<String, String> headerMap = createHeaderMap(createRequestHeaders());
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId(CREDENTIAL_ID);
+
+    JourneyConfiguration journeyConfig = createJourneyConfig();
+    when(configStoreProxyService.getJourneyConfigurationById(anyMap()))
+            .thenReturn(journeyConfig);
+
+    // Identity store → LEGACY = true
+    IdentityStoreResponse identityStoreResponse =
+            new IdentityStoreResponse(
+                    CREDENTIAL_ID,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    LINKED_CUSTOMER_ID,
+                    true   // LEGACY FLAG
+            );
+
+    when(identityStoreService.getUserCredential(
+            anyMap(),
+            eq(CREDENTIAL_ID),
+            any(CredentialStore.class),
+            eq(ISIDENTIFIERYPETOKEN)))
+            .thenReturn(identityStoreResponse);
+
+    // Legacy CAPI response
+    CustomerInformationSystemResponse legacyResponse =
+            prepareCustomerInformationSystemResponse();
+
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+            anyMap(),
+            eq(LINKED_CUSTOMER_ID),
+            anyString()))
+            .thenReturn(legacyResponse);
+
+    // ---------- WHEN ----------
+    IdentityResolverResponse response =
+            serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    // ---------- THEN ----------
+    assertNotNull(response);
+
+    // Legacy CAPI MUST be called
+    verify(legacyCredentialProxyService, times(1))
+            .getEligibleAuthenticators(anyMap(), eq(LINKED_CUSTOMER_ID), anyString());
+
+    // Non-legacy API MUST NOT be called
+    verify(customerInfoSystemProxyService, never())
+            .getEligibleAuthenticatorsById(any(), any(), any(), any(), any(), any());
+
+    // Optional but powerful
+    assertNotNull(response.getEligibleAuthenticators());
+}
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
 Fix implemented and validated locally.
 
 Changes:
