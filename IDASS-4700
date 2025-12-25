@@ -1,4 +1,57 @@
 @Test
+    void shouldCallLegacyApi_HappyPathLegacy() {
+
+        Map<String, String> headerMap = Map.of("x-request-id", "test");
+
+        IdentityResolverRequest request = new IdentityResolverRequest();
+        request.setCredentialId("CRED_123");
+
+        IdentityStoreResponse identityStoreResponse =
+                new IdentityStoreResponse(
+                        "CRED_123",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "LINKED_123",
+                        null
+                );
+
+        // mocks
+        when(configStoreProxyService.getJourneyConfigurationById(any()))
+                .thenReturn(journeyConfig);
+
+        when(journeyConfig.isDynamicLinkingEnabled())
+                .thenReturn(false);   // LEGACY PATH
+
+        when(identityStoreService.getUserCredential(
+                anyMap(),
+                eq("CRED_123"),
+                any(),
+                any()
+        )).thenReturn(identityStoreResponse);
+
+        when(legacyCredentialProxyService.getEligibleAuthenticators(
+                anyMap(),
+                eq("LINKED_123"),
+                anyString()
+        )).thenReturn(mock(CustomerInformationSystemResponse.class));
+
+        // Act
+        IdentityResolverResponse response =
+                serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+        // Assert
+        assertNotNull(response);
+
+        verify(legacyCredentialProxyService, times(1))
+                .getEligibleAuthenticators(anyMap(), eq("LINKED_123"), anyString());
+
+        verifyNoMoreInteractions(customerInfoSystemProxyService);
+    }
+----------------------------------------------------------------------------------
+@Test
 void shouldCallLegacyCapi_HappyPathLegacy() {
 
     Map<String, String> headerMap =
