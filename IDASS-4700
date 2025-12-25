@@ -1,4 +1,44 @@
 @Test
+void shouldCallLegacyCapi_HappyPathLegacy() {
+
+    Map<String, String> headerMap =
+            createHeaderMap(createRequestHeaders());
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId(CREDENTIAL_ID);
+
+    when(configStoreProxyService.getJourneyConfigurationById(any()))
+            .thenReturn(journeyConfig);
+
+    when(journeyConfig.getConfig())
+            .thenReturn(config);
+
+    when(config.isDynamicLinkingEnabled())
+            .thenReturn(false);
+
+    when(identityStoreService.getUserCredential(
+            anyMap(), eq(CREDENTIAL_ID), any(), any()))
+            .thenReturn(identityStoreResponse);
+
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+            anyMap(),
+            eq(LINKED_CUSTOMER_ID),
+            anyString()))
+            .thenReturn(legacyResponse);
+
+    IdentityResolverResponse response =
+            serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    assertNotNull(response);
+
+    verify(legacyCredentialProxyService, times(1))
+            .getEligibleAuthenticators(anyMap(), eq(LINKED_CUSTOMER_ID), anyString());
+
+    verifyNoMoreInteractions(customerInfoSystemProxyService);
+}
+
+------------------------------------------------------
+@Test
 void shouldCallLegacyCapi_whenIdentityStoreIsLegacy() {
 
     // ---------- GIVEN ----------
