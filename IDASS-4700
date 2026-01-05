@@ -1,4 +1,59 @@
- @Test
+@Test
+void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
+
+    // ---------- Arrange ----------
+
+    Map<String, String> headerMap = new HashMap<>();
+    headerMap.put("X-LBG-TOKEN", "dummy-token");
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+
+    // ---- Authenticator (NO setters, must mock)
+    Authenticator otp = mock(Authenticator.class);
+    when(otp.getType()).thenReturn("OTP");
+
+    JourneyConfiguration journeyConfiguration = mock(JourneyConfiguration.class);
+    when(journeyConfiguration.getAuthenticators())
+            .thenReturn(List.of(otp));
+
+    when(journeyState.getConfig())
+            .thenReturn(journeyConfiguration);
+
+    // ---- Identity store
+    when(credentialStore.isLegacy()).thenReturn(true);
+    when(credentialStore.getStore()).thenReturn("SCW");
+
+    IdentityStoreResponse storeResponse = new IdentityStoreResponse();
+    storeResponse.setLinkedCustomerId("linked-123");
+    storeResponse.setCredentialId("cred-123");
+
+    Map.Entry<CredentialStore, IdentityStoreResponse> entry =
+            new AbstractMap.SimpleEntry<>(credentialStore, storeResponse);
+
+    // 🔥 THIS WAS MISSING IN ALL YOUR TESTS
+    when(identityStoreService.getIdentityStoreEntry(anyString()))
+            .thenReturn(entry);
+
+    // ---- Legacy proxy
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+            anyMap(),
+            anyString(),
+            anyString()
+    )).thenReturn(List.of("OTP"));
+
+    // ---------- Act ----------
+    serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    // ---------- Assert ----------
+    verify(legacyCredentialProxyService, times(1))
+            .getEligibleAuthenticators(anyMap(), anyString(), anyString());
+
+    verifyNoInteractions(customerInfoSystemProxyService);
+}
+
+---------------------------------------------------
+@Test
     void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
 
         // ---------- Arrange ----------
