@@ -1,4 +1,42 @@
 @Test
+    void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
+
+        // ---------- Arrange ----------
+
+        Map<String, String> headerMap = new HashMap<>();
+        headerMap.put("X-LBG-TOKEN", "dummy-token");
+
+        IdentityResolverRequest request = new IdentityResolverRequest();
+        request.setCredentialId("cred-123");
+
+        // journey config
+        when(journeyState.getConfig()).thenReturn(journeyConfiguration);
+        when(journeyConfiguration.getAuthenticators())
+                .thenReturn(List.of(new Authenticator("OTP")));
+
+        // identity store
+        when(identityStore.isLegacy()).thenReturn(true);
+        when(identityStore.getStore()).thenReturn("SCW");
+
+        // legacy service response
+        when(legacyCredentialProxyService.getEligibleAuthenticators(
+                anyMap(),
+                anyString(),
+                anyString()
+        )).thenReturn(List.of("OTP"));
+
+        // ---------- Act ----------
+        serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+        // ---------- Assert ----------
+        verify(legacyCredentialProxyService, times(1))
+                .getEligibleAuthenticators(anyMap(), anyString(), anyString());
+
+        verifyNoInteractions(customerInfoSystemProxyService);
+    }
+
+----------------------------------------------------------------
+@Test
     void shouldCallLegacyApi_HappyPathLegacy() {
 
         Map<String, String> headerMap = Map.of("x-request-id", "test");
