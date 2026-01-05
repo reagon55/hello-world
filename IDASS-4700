@@ -1,4 +1,71 @@
 @Test
+    void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
+
+        /* ===================== Arrange ===================== */
+
+        Map<String, String> headerMap = new HashMap<>();
+        headerMap.put("X-LBG-TOKEN", "dummy-token");
+
+        IdentityResolverRequest request = new IdentityResolverRequest();
+        request.setCredentialId(CREDENTIAL_ID);
+
+        // ---------- Authenticator ----------
+        Authenticator otp = mock(Authenticator.class);
+        when(otp.getType()).thenReturn("OTP");
+
+        // ---------- Journey config ----------
+        JourneyConfiguration journeyConfiguration = mock(JourneyConfiguration.class);
+        when(journeyConfiguration.getAuthenticators())
+                .thenReturn(List.of(otp));
+
+        when(journeyState.getConfig())
+                .thenReturn(journeyConfiguration);
+
+        // ---------- IdentityStore ----------
+        when(identityStore.getStore()).thenReturn("SCW");
+        when(identityStore.isLegacy()).thenReturn(true);
+
+        // ---------- Identity store response (REAL OBJECT) ----------
+        IdentityStoreResponse identityStoreResponse =
+                new IdentityStoreResponse(
+                        CREDENTIAL_ID,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        LINKED_CUSTOMER_ID,
+                        null
+                );
+
+        when(identityStoreService.getUserCredential(
+                anyMap(),
+                eq(CREDENTIAL_ID),
+                any(CredentialStore.class),
+                anyBoolean()
+        )).thenReturn(identityStoreResponse);
+
+        // ---------- Legacy proxy ----------
+        when(legacyCredentialProxyService.getEligibleAuthenticators(
+                anyMap(),
+                eq(LINKED_CUSTOMER_ID),
+                eq("SCW")
+        )).thenReturn(List.of("OTP"));
+
+        /* ===================== Act ===================== */
+
+        serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+        /* ===================== Assert ===================== */
+
+        verify(legacyCredentialProxyService, times(1))
+                .getEligibleAuthenticators(anyMap(), eq(LINKED_CUSTOMER_ID), eq("SCW"));
+
+        verifyNoInteractions(customerInfoSystemProxyService);
+    }
+}
+---------------------------------------------------------------------------------------------
+@Test
 void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
 
     // ---------- Arrange ----------
