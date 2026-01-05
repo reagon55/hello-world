@@ -40,6 +40,110 @@ void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
     JourneyState journeyState = mock(JourneyState.class);
     when(journeyState.getConfig()).thenReturn(journeyConfig);
 
+    // ---- CIS customer details ----
+    CustomerInformationSystemDetailsResponse cisDetails =
+            new CustomerInformationSystemDetailsResponse();
+    cisDetails.setCustomerId("cust-001");
+
+    when(customerInfoSystemProxyService.getCustomerDetails(
+            eq(headerMap),
+            isNull(),
+            eq("linked-123")
+    )).thenReturn(cisDetails);
+
+    // ---- Eligible authenticators ----
+    EligibleAuthenticator eligibleAuthenticator = mock(EligibleAuthenticator.class);
+    when(eligibleAuthenticator.getAuthenticators()).thenReturn(List.of("OTP"));
+
+    CustomerInformationSystemResponse eligibleAuthResponse =
+            mock(CustomerInformationSystemResponse.class);
+    when(eligibleAuthResponse.getEligibleAuthenticators())
+            .thenReturn(List.of(eligibleAuthenticator));
+
+    // 🔥 THIS IS THE MOST IMPORTANT STUB 🔥
+    when(customerInfoSystemProxyService.getEligibleAuthenticatorsById(
+            anyMap(),
+            isNull(),
+            eq("cust-001"),
+            anyList(),
+            eq("APP"),
+            eq("APP_ALIAS"),
+            eq("WEB")
+    )).thenReturn(eligibleAuthResponse);
+
+    // ---------- WHEN ----------
+    IdentityResolverResponse response =
+            ReflectionTestUtils.invokeMethod(
+                    serviceUnderTest,
+                    "handleIdentityStoreEntry",
+                    headerMap,
+                    request,
+                    journeyState,
+                    Map.of(),
+                    entry
+            );
+
+    // ---------- THEN ----------
+    assertNotNull(response);
+
+    verify(customerInfoSystemProxyService)
+            .getCustomerDetails(eq(headerMap), isNull(), eq("linked-123"));
+
+    verify(customerInfoSystemProxyService)
+            .getEligibleAuthenticatorsById(
+                    anyMap(),
+                    isNull(),
+                    eq("cust-001"),
+                    anyList(),
+                    eq("APP"),
+                    eq("APP_ALIAS"),
+                    eq("WEB")
+            );
+}
+
+---------------------------------------------------------------------------------------
+@Test
+void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
+
+    // ---------- GIVEN ----------
+
+    Map<String, String> headerMap = Map.of("X-LBG-TOKEN", "dummy-token");
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+    request.setAppName("APP");
+    request.setAppAliasName("APP_ALIAS");
+    request.setChannelTypeCode("WEB");
+
+    CredentialStore credentialStore = new CredentialStore();
+    credentialStore.setStore("SCW");
+    credentialStore.setLegacy(false);
+
+    IdentityStoreResponse storeResponse = new IdentityStoreResponse(
+            "cred-123",
+            null,
+            null,
+            null,
+            null,
+            null,
+            "linked-123",
+            null
+    );
+
+    Map.Entry<CredentialStore, IdentityStoreResponse> entry =
+            Map.entry(credentialStore, storeResponse);
+
+    // ---- Journey ----
+    Authenticator otp = mock(Authenticator.class);
+    when(otp.getType()).thenReturn("OTP");
+
+    JourneyConfiguration journeyConfig = mock(JourneyConfiguration.class);
+    when(journeyConfig.getAuthenticators()).thenReturn(List.of(otp));
+    when(journeyConfig.isDynamicLinkingEnabled()).thenReturn(false);
+
+    JourneyState journeyState = mock(JourneyState.class);
+    when(journeyState.getConfig()).thenReturn(journeyConfig);
+
     // ---- CIS customer ----
     CustomerInformationSystemDetailsResponse cisDetails =
             new CustomerInformationSystemDetailsResponse();
