@@ -1,3 +1,62 @@
+
+@Test
+void shouldThrowException_whenNoCommonAuthenticators() {
+
+    // -------- Arrange --------
+
+    Map<String, String> headerMap =
+        Map.of("X-LBG-TOKEN", "dummy-token");
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+
+    Map<String, String> mandatoryFinalTransEntry = Map.of();
+
+    CredentialsStore credentialsStore = new CredentialsStore();
+    credentialsStore.setStore("SCW");
+    credentialsStore.setLegacy(true);
+
+    IdentityStoreResponse identityStoreResponse =
+        mock(IdentityStoreResponse.class);
+    when(identityStoreResponse.getLinkedCustomerId())
+        .thenReturn("linked-123");
+
+    Map.Entry<CredentialsStore, IdentityStoreResponse> entry =
+        Map.entry(credentialsStore, identityStoreResponse);
+
+    JourneyConfiguration journeyConfiguration =
+        mock(JourneyConfiguration.class);
+    when(journeyConfiguration.getAuthenticators())
+        .thenReturn(List.of()); // NO configured authenticators
+
+    JourneyState journeyState = mock(JourneyState.class);
+    when(journeyState.getConfig())
+        .thenReturn(journeyConfiguration);
+
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+        anyMap(),
+        eq("linked-123"),
+        eq("SCW")
+    )).thenReturn(List.of("OTP")); // Eligible but no intersection
+
+    // -------- Act + Assert --------
+
+    assertThatThrownBy(() ->
+        ReflectionTestUtils.invokeMethod(
+            serviceUnderTest,
+            "handleIdentityStoreEntry",
+            headerMap,
+            request,
+            journeyState,
+            mandatoryFinalTransEntry,
+            entry
+        )
+    )
+    .isInstanceOf(CoordinatorException.class)
+    .hasMessageContaining("No authenticator to proceed");
+}
+
+-----------------------------------------------------------------------------------------
 @Test
 void shouldThrowException_whenNoCommonAuthenticators() {
     when(journeyConfiguration.getAuthenticators())
