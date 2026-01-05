@@ -1,4 +1,96 @@
 @Test
+void shouldReturnLegacyIdentityStoreEntry_whenIdentityStoreIsLegacy() {
+    // Arrange
+    Map<String, String> headerMap = Map.of("X-LBG-TOKEN", "dummy");
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+
+    CredentialStore credentialStore = new CredentialStore();
+    credentialStore.setStore("SCW");
+    credentialStore.setLegacy(true);
+
+    IdentityStoreResponse legacyResponse = mock(IdentityStoreResponse.class);
+
+    when(legacyCredentialProxyService.getLegacyCredential(
+            eq(headerMap),
+            eq("cred-123"),
+            eq("SCW")
+    )).thenReturn(legacyResponse);
+
+    // Act
+    @SuppressWarnings("unchecked")
+    Map.Entry<CredentialStore, IdentityStoreResponse> result =
+            (Map.Entry<CredentialStore, IdentityStoreResponse>)
+                    ReflectionTestUtils.invokeMethod(
+                            serviceUnderTest,
+                            "getIdentityStoreEntry",
+                            headerMap,
+                            request,
+                            credentialStore,
+                            false
+                    );
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(credentialStore, result.getKey());
+    assertEquals(legacyResponse, result.getValue());
+
+    verify(legacyCredentialProxyService, times(1))
+            .getLegacyCredential(anyMap(), eq("cred-123"), eq("SCW"));
+
+    verify(identityStoreService, never())
+            .getUserCredential(any(), any(), any(), anyBoolean());
+}
+
+
+----------------------------------------------
+@Test
+void shouldReturnNonLegacyIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
+    // Arrange
+    Map<String, String> headerMap = Map.of("X-LBG-TOKEN", "dummy");
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+
+    CredentialStore credentialStore = new CredentialStore();
+    credentialStore.setStore("SCW");
+    credentialStore.setLegacy(false);
+
+    IdentityStoreResponse response = mock(IdentityStoreResponse.class);
+
+    when(identityStoreService.getUserCredential(
+            eq(headerMap),
+            eq("cred-123"),
+            eq(credentialStore),
+            eq(true)
+    )).thenReturn(response);
+
+    // Act
+    @SuppressWarnings("unchecked")
+    Map.Entry<CredentialStore, IdentityStoreResponse> result =
+            (Map.Entry<CredentialStore, IdentityStoreResponse>)
+                    ReflectionTestUtils.invokeMethod(
+                            serviceUnderTest,
+                            "getIdentityStoreEntry",
+                            headerMap,
+                            request,
+                            credentialStore,
+                            true
+                    );
+
+    // Assert
+    assertNotNull(result);
+    assertEquals(credentialStore, result.getKey());
+    assertEquals(response, result.getValue());
+
+    verify(identityStoreService, times(1))
+            .getUserCredential(anyMap(), eq("cred-123"), eq(credentialStore), eq(true));
+
+    verify(legacyCredentialProxyService, never())
+            .getLegacyCredential(any(), any(), any());
+}
+
+----------------------------------------------------------------------------------------
+@Test
     void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
 
         /* ===================== Arrange ===================== */
