@@ -9,6 +9,71 @@ void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
     IdentityResolverRequest request = new IdentityResolverRequest();
     request.setCredentialId("cred-123");
 
+    // Authenticator (NO setters → must mock)
+    Authenticator otp = mock(Authenticator.class);
+    when(otp.getType()).thenReturn("OTP");
+
+    JourneyConfiguration journeyConfiguration = mock(JourneyConfiguration.class);
+    when(journeyConfiguration.getAuthenticators())
+            .thenReturn(List.of(otp));
+
+    when(journeyState.getConfig())
+            .thenReturn(journeyConfiguration);
+
+    // Credential store
+    when(credentialStore.isLegacy()).thenReturn(true);
+    when(credentialStore.getStore()).thenReturn("SCW");
+
+    // Identity store response (REAL OBJECT – constructor only)
+    IdentityStoreResponse identityStoreResponse =
+        new IdentityStoreResponse(
+            "cred-123",        // credentialId
+            null,              // customerId
+            null,              // group
+            null,              // status
+            null,              // passwordStatus
+            null,              // accountCreationDate
+            "linked-123",      // linkedCustomerId
+            null               // currentGlobalCounter
+        );
+
+    // IdentityStoreService (CRITICAL MOCK)
+    when(identityStoreService.getUserCredential(
+            anyMap(),
+            eq("cred-123"),
+            eq(credentialStore),
+            anyBoolean()
+    )).thenReturn(identityStoreResponse);
+
+    // Legacy proxy
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+            anyMap(),
+            eq("linked-123"),
+            eq("SCW")
+    )).thenReturn(List.of("OTP"));
+
+    // ---------- Act ----------
+    serviceUnderTest.resolveUserIdentity(headerMap, request);
+
+    // ---------- Assert ----------
+    verify(legacyCredentialProxyService, times(1))
+            .getEligibleAuthenticators(anyMap(), anyString(), anyString());
+
+    verifyNoInteractions(customerInfoSystemProxyService);
+}
+
+--------------------------------------------------
+@Test
+void shouldCallLegacyEligibleAuthenticators_whenIdentityStoreIsLegacy() {
+
+    // ---------- Arrange ----------
+
+    Map<String, String> headerMap = new HashMap<>();
+    headerMap.put("X-LBG-TOKEN", "dummy-token");
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+
     // ---- Authenticator (NO setters → must mock)
     Authenticator otp = mock(Authenticator.class);
     when(otp.getType()).thenReturn("OTP");
