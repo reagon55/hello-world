@@ -86,6 +86,95 @@ void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
             .getEligibleAuthenticators(anyMap(), eq("cust-001"), eq("SCW"));
 }
 
+---------------------------------------------------------------------------------------------
+@Test
+void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
+
+    // -------------------- GIVEN --------------------
+
+    // headers
+    Map<String, String> headerMap = Map.of("X-LBG-TOKEN", "dummy-token");
+
+    // request
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+
+    // credential store
+    CredentialStore credentialStore = new CredentialStore();
+    credentialStore.setStore("SCW");
+    credentialStore.setLegacy(false);
+
+    // identity store response
+    IdentityStoreResponse identityStoreResponse =
+            new IdentityStoreResponse(
+                    "cred-123",
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "linked-123",
+                    null
+            );
+
+    Map.Entry<CredentialStore, IdentityStoreResponse> entry =
+            Map.entry(credentialStore, identityStoreResponse);
+
+    // -------------------- JOURNEY SETUP (CRITICAL) --------------------
+
+    Authenticator otp = mock(Authenticator.class);
+    when(otp.getType()).thenReturn("OTP");
+
+    JourneyConfiguration journeyConfig = mock(JourneyConfiguration.class);
+    when(journeyConfig.getAuthenticators()).thenReturn(List.of(otp));
+
+    JourneyState journeyState = mock(JourneyState.class);
+    when(journeyState.getConfig()).thenReturn(journeyConfig);
+
+    // -------------------- CIS MOCK --------------------
+
+    CustomerInformationSystemDetailsResponse cisResponse =
+            new CustomerInformationSystemDetailsResponse();
+    cisResponse.setCustomerId("cust-001");
+
+    when(customerInfoSystemProxyService.getCustomerDetails(
+            eq(headerMap),
+            isNull(),
+            eq("linked-123")
+    )).thenReturn(cisResponse);
+
+    // -------------------- LEGACY AUTHENTICATOR MOCK --------------------
+
+    when(legacyCredentialProxyService.getEligibleAuthenticators(
+            anyMap(),
+            eq("cust-001"),
+            eq("SCW")
+    )).thenReturn(List.of("OTP"));
+
+    // -------------------- WHEN --------------------
+
+    IdentityResolverResponse response =
+            ReflectionTestUtils.invokeMethod(
+                    serviceUnderTest,
+                    "handleIdentityStoreEntry",
+                    headerMap,
+                    request,
+                    journeyState,
+                    Map.of(),
+                    entry
+            );
+
+    // -------------------- THEN --------------------
+
+    assertNotNull(response);
+
+    verify(customerInfoSystemProxyService, times(1))
+            .getCustomerDetails(eq(headerMap), isNull(), eq("linked-123"));
+
+    verify(legacyCredentialProxyService, times(1))
+            .getEligibleAuthenticators(anyMap(), eq("cust-001"), eq("SCW"));
+}
+
 ------------------------------------------------------------------------------------------------------
 @Test
 void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
