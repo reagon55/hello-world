@@ -1,4 +1,28 @@
 @Test
+void shouldThrowException_whenNoCommonAuthenticators() {
+    when(journeyConfiguration.getAuthenticators())
+        .thenReturn(List.of());
+
+    when(legacyCredentialProxyService.getEligibleAuthenticators(...))
+        .thenReturn(List.of("OTP"));
+
+    assertThatThrownBy(() ->
+        ReflectionTestUtils.invokeMethod(
+            serviceUnderTest,
+            "handleIdentityStoreEntry",
+            headerMap,
+            request,
+            journeyState,
+            mandatoryFinalTransEntry,
+            entry
+        )
+    ).isInstanceOf(CoordinatorException.class)
+     .hasMessageContaining("No authenticator to proceed");
+}
+
+
+---------------------------------------------------------------------------
+--@Test
 void shouldHandleIdentityStoreEntry_whenIdentityStoreIsLegacy() {
 
     // ---------- Arrange ----------
