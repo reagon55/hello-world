@@ -1,6 +1,80 @@
 @Test
 void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
 
+    Map<String, String> headerMap = Map.of("X-LBG-TOKEN", "dummy-token");
+
+    IdentityResolverRequest request = new IdentityResolverRequest();
+    request.setCredentialId("cred-123");
+
+    CredentialStore credentialStore = new CredentialStore();
+    credentialStore.setStore("SCW");
+    credentialStore.setLegacy(false);
+
+    IdentityStoreResponse identityStoreResponse =
+        new IdentityStoreResponse(
+            "cred-123",
+            null,
+            null,
+            null,
+            null,
+            null,
+            "linked-123",
+            null
+        );
+
+    Map.Entry<CredentialStore, IdentityStoreResponse> entry =
+        Map.entry(credentialStore, identityStoreResponse);
+
+    Authenticator otp = mock(Authenticator.class);
+    when(otp.getType()).thenReturn("OTP");
+
+    JourneyConfiguration journeyConfig = mock(JourneyConfiguration.class);
+    when(journeyConfig.getAuthenticators()).thenReturn(List.of(otp));
+
+    JourneyState journeyState = mock(JourneyState.class);
+    when(journeyState.getConfig()).thenReturn(journeyConfig);
+
+    CustomerInformationSystemDetailsResponse cisResponse =
+        new CustomerInformationSystemDetailsResponse();
+    cisResponse.setCustomerId("cust-001");
+
+    when(customerInfoSystemProxyService.getCustomerDetails(
+        eq(headerMap),
+        isNull(),
+        eq("linked-123")
+    )).thenReturn(cisResponse);
+
+    
+    doReturn(List.of("OTP"))
+        .when(serviceUnderTest)
+        .getEligibleAuthenticators(
+            anyMap(),
+            eq("cust-001"),
+            anyList(),
+            eq("SCW"),
+            any(IdentityResolverRequest.class)
+        );
+
+    IdentityResolverResponse response =
+        ReflectionTestUtils.invokeMethod(
+            serviceUnderTest,
+            "handleIdentityStoreEntry",
+            headerMap,
+            request,
+            journeyState,
+            Map.of(),
+            entry
+        );
+
+    assertNotNull(response);
+
+    verify(customerInfoSystemProxyService, times(1))
+        .getCustomerDetails(eq(headerMap), isNull(), eq("linked-123"));
+}
+--------------------------------------------------------------------------------------
+@Test
+void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
+
     // ---------- Arrange ----------
     Map<String, String> headerMap =
             Map.of("X-LBG-TOKEN", "dummy-token");
