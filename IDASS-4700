@@ -1,3 +1,103 @@
+curl -X POST \
+  http://localhost:9080/iau-ssi-coordinator-user-identity-resolver-api/v1/identify \
+  -H "Content-Type: application/json" \
+  -H "x-lbg-session-id: test-session-123" \
+  -H "x-lbg-txn-correlation-id: corr-123" \
+  -d '{
+    "username": "barry@emaildomain.com"
+  }'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 @Test
 void shouldHandleIdentityStoreEntry_whenIdentityStoreIsNotLegacy() {
 
