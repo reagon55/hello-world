@@ -1,3 +1,42 @@
+"c0573409-7a52-4013-b400-50e3a1d657f1": {
+  "brand": "SCW",
+  "channel": "PI",
+  "journeyType": "logon",
+  "dynamicLinkingEnabled": false,
+
+  "identifiers": [
+    {
+      "type": "username",
+      "sequence": 0,
+      "customerInformationSystem": "",
+      "credentialStores": [
+        {
+          "store": "ADLDS_SWEmployer",
+          "sequence": 0,
+          "partition": "PI_SCW",
+          "legacy": true
+        }
+      ]
+    }
+  ],
+
+  "authenticators": [
+    {
+      "type": "password",
+      "sequence": 0,
+      "credentialStores": [
+        {
+          "store": "ADLDS_SWEmployer",
+          "sequence": 0,
+          "partition": "PI_SCW",
+          "legacy": true
+        }
+      ]
+    }
+  ]
+}
+
+-------------------------------------------------------------------------------------------------
 "51f0cad3-3280-4ea0-8a95-da579e4979f7": {
   "brand": "LTB",
   "channel": "RC",
