@@ -1,3 +1,5 @@
+X-LBG-TOKEN: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ0ZXN0VXNlciIsImV4cCI6MTk5OTk5OTk5OX0.
+-------------------------------------------------------------------------------------------------
 curl -X POST \
   http://localhost:9080/iau-ssi-coordinator-user-identity-resolver-api/v1/identify \
   -H "Content-Type: application/json" \
