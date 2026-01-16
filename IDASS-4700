@@ -1,3 +1,15 @@
+"51f0cad3-3280-4ea0-8a95-da579e4979f7": {
+  "brand": "LTB",
+  "channel": "RC",
+  "journeyType": "re-auth",
+  "isIdentifierTypeToken": false,
+  "dynamicLinkingEnabled": true,
+  "authenticators": [
+    ...
+  ]
+}
+
+-----------------------------------------------------------------------------------------------------------
 X-LBG-TOKEN: eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiJ0ZXN0VXNlciIsImV4cCI6MTk5OTk5OTk5OX0.
 -------------------------------------------------------------------------------------------------
 curl -X POST \
