@@ -1,4 +1,99 @@
 @Test
+void shouldHandleHttpMessageNotReadable_whenCauseNull() {
+
+    ErrorConfig errorConfig = mock(ErrorConfig.class);
+
+    Error mockError = new Error();
+    mockError.setCode("ERR_200");
+    mockError.setMessage("Invalid request");
+    mockError.setStatusCode(400);
+
+    when(errorConfig.generateError(Mockito.anyString()))
+            .thenReturn(mockError);
+
+    ExceptionResolver resolver = new ExceptionResolver(errorConfig);
+
+    HttpMessageNotReadableException ex =
+            new HttpMessageNotReadableException("Invalid body");
+
+    WebRequest request =
+            new ServletWebRequest(new MockHttpServletRequest());
+
+    HttpHeaders headers = new HttpHeaders();
+
+    ResponseEntity<Object> response =
+            resolver.handleHttpMessageNotReadable(ex, headers, HttpStatus.BAD_REQUEST, request);
+
+    assertNotNull(response);
+}
+------------------------------------------\\
+
+@Test
+void shouldHandleJsonParseException() {
+
+    ErrorConfig errorConfig = mock(ErrorConfig.class);
+
+    Error mockError = new Error();
+    mockError.setCode("ERR_200");
+    mockError.setMessage("Invalid JSON");
+    mockError.setStatusCode(400);
+
+    when(errorConfig.generateError(Mockito.anyString()))
+            .thenReturn(mockError);
+
+    ExceptionResolver resolver = new ExceptionResolver(errorConfig);
+
+    JsonParseException cause =
+            new JsonParseException(null, "Invalid JSON");
+
+    HttpMessageNotReadableException ex =
+            new HttpMessageNotReadableException("Invalid", cause);
+
+    WebRequest request =
+            new ServletWebRequest(new MockHttpServletRequest());
+
+    HttpHeaders headers = new HttpHeaders();
+
+    ResponseEntity<Object> response =
+            resolver.handleHttpMessageNotReadable(ex, headers, HttpStatus.BAD_REQUEST, request);
+
+    assertNotNull(response);
+}
+------------------------------------------------
+
+@Test
+void shouldHandleUnrecognizedPropertyException() {
+
+    ErrorConfig errorConfig = mock(ErrorConfig.class);
+
+    Error mockError = new Error();
+    mockError.setCode("ERR_203");
+    mockError.setMessage("Unknown field");
+    mockError.setStatusCode(400);
+
+    when(errorConfig.generateError(Mockito.anyString()))
+            .thenReturn(mockError);
+
+    ExceptionResolver resolver = new ExceptionResolver(errorConfig);
+
+    UnrecognizedPropertyException cause =
+            mock(UnrecognizedPropertyException.class);
+
+    HttpMessageNotReadableException ex =
+            new HttpMessageNotReadableException("Invalid", cause);
+
+    WebRequest request =
+            new ServletWebRequest(new MockHttpServletRequest());
+
+    HttpHeaders headers = new HttpHeaders();
+
+    ResponseEntity<Object> response =
+            resolver.handleHttpMessageNotReadable(ex, headers, HttpStatus.BAD_REQUEST, request);
+
+    assertNotNull(response);
+}
+-------------------------------------------------------------------------------------
+@Test
 public void shouldHandlePathVariableLengthExceeded() {
 
     ConstraintViolation<?> violation = mock(ConstraintViolation.class);
