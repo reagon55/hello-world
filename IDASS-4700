@@ -1,3 +1,35 @@
+@Test
+public void shouldHandlePathVariableLengthExceeded() {
+
+    ConstraintViolation<?> violation = mock(ConstraintViolation.class);
+    when(violation.getMessage())
+            .thenReturn("PATH_VARIABLE_LENGTH_EXCEEDED: test");
+
+    ConstraintViolationException ex =
+            new ConstraintViolationException(Set.of(violation));
+
+    Error mockError = new Error();
+    mockError.setCode("CRED_MGMT_CONSUMABLE_API_ERR_305");
+    mockError.setMessage("Invalid input: %s");
+    mockError.setStatusCode(400);
+
+    Map<String, Error> errorMap = new HashMap<>();
+    errorMap.put(mockError.getCode(), mockError);
+
+    ErrorConfig errorConfig = mock(ErrorConfig.class);
+    when(errorConfig.getErrorMap()).thenReturn(errorMap);
+
+    ExceptionResolver resolver = new ExceptionResolver(errorConfig);
+
+    WebRequest request =
+            new ServletWebRequest(new MockHttpServletRequest());
+
+    ResponseEntity<Object> response =
+            resolver.handleConstraintViolationException(ex, request);
+
+    assertNotNull(response);
+}
+-------------------------------
 Test
 public void shouldHandlePathVariableLengthExceeded() {
 
