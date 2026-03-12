@@ -1,4 +1,29 @@
 @Test
+void shouldReturnDefaultWhenErrorsListIsEmpty() throws Exception {
+
+    ErrorMapperUtil util = new ErrorMapperUtil();
+
+    Map<String, String> map = new HashMap<>();
+    map.put("DOWNSTREAM_CODE", "SERVICE_CODE");
+    util.setServiceErrorMap(map);
+
+    // errors array empty
+    String responseJson =
+            "{\"errors\":[]}";
+
+    HttpStatusCodeException ex =
+            new HttpClientErrorException(
+                    HttpStatus.BAD_REQUEST,
+                    "Bad Request",
+                    responseJson.getBytes(),
+                    StandardCharsets.UTF_8);
+
+    String result = util.getErrorCode(ex, "DEFAULT");
+
+    assertEquals("DEFAULT", result);
+}
+----------------------------------------------------------------------------
+@Test
 void shouldHandleHttpMessageNotReadable_whenCauseNull() {
 
     ErrorConfig errorConfig = mock(ErrorConfig.class);
