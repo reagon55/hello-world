@@ -1,3 +1,75 @@
+package com.lbg.iau.ssi.coordinator.authenticators.mocks;
+
+import org.mockserver.mock.Expectation;
+import org.mockserver.server.initialize.ExpectationInitializer;
+
+import static org.mockserver.model.HttpRequest.request;
+import static org.mockserver.model.HttpResponse.response;
+
+public class InitialiseMocks implements ExpectationInitializer {
+
+    @Override
+    public Expectation[] initializeExpectations() {
+        return phylaxVerifySignature();
+    }
+
+    private Expectation[] phylaxVerifySignature() {
+        return new Expectation[] {
+            // Happy Path - 200 signature verification successful
+            new Expectation(
+                request()
+                    .withMethod("POST")
+                    .withPath(".*" + "/verify-signature")
+                    .withHeader("x-lbg-trust-token", "valid-token")
+            ).thenRespond(
+                response()
+                    .withStatusCode(200)
+                    .withHeader("x-lbg-txn-correlation-id", "c")
+                    .withBody("{\"signatureValid\": true}")
+            ),
+
+            // Unhappy Path - 200 signature invalid
+            new Expectation(
+                request()
+                    .withMethod("POST")
+                    .withPath(".*" + "/verify-signature")
+                    .withHeader("x-lbg-trust-token", "invalid-token")
+            ).thenRespond(
+                response()
+                    .withStatusCode(200)
+                    .withHeader("x-lbg-txn-correlation-id", "c")
+                    .withBody("{\"signatureValid\": false}")
+            ),
+
+            // Error Path - 500 Phylax service unavailable
+            new Expectation(
+                request()
+                    .withMethod("POST")
+                    .withPath(".*" + "/verify-signature")
+                    .withHeader("x-lbg-trust-token", "error-token")
+            ).thenRespond(
+                response()
+                    .withStatusCode(500)
+                    .withHeader("x-lbg-txn-correlation-id", "c")
+                    .withBody("{\"error\": \"Internal Server Error\"}")
+            ),
+
+            // Bad Request - 400 malformed JWS
+            new Expectation(
+                request()
+                    .withMethod("POST")
+                    .withPath(".*" + "/verify-signature")
+                    .withHeader("x-lbg-trust-token", "malformed-token")
+            ).thenRespond(
+                response()
+                    .withStatusCode(400)
+                    .withHeader("x-lbg-txn-correlation-id", "c")
+                    .withBody("{\"error\": \"Invalid JWS format\"}")
+            )
+        };
+    }
+}
+------------------------
 @Test
 void shouldReturnDefaultWhenErrorsListIsEmpty() throws Exception {
 
