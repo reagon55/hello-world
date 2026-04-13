@@ -1,3 +1,71 @@
+package com.lbg.iau.ssi.coordinator.authenticators.controller;
+
+import com.lbg.iau.ssi.coordinator.authenticators.service.PhylaxProxyService;
+import com.lbg.iau.ssi.coordinator.contract.api.IdVerifyApi;
+import com.lbg.iau.ssi.coordinator.contract.model.IdVerifyResponse;
+import com.lbg.iau.ssi.coordinator.contract.model.StatusCheckResponse;
+import com.lbg.sca.logger.ApplicationLogger;
+import com.lbg.sca.logger.LoggerManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Validated
+@RestController
+@RequiredArgsConstructor
+public class IdVerifyController implements IdVerifyApi {
+
+    private static final ApplicationLogger LOGGER =
+        LoggerManager.getApplicationLogger(IdVerifyController.class);
+
+    private static final String ENTRY_LOG = "IdVerifyController entry - ";
+    private static final String EXIT_LOG = "IdVerifyController exit - ";
+
+    private final PhylaxProxyService phylaxProxyService;
+
+    @Override
+    public ResponseEntity<IdVerifyResponse> idVerify(
+            String xLbgTxnCorrelationId,
+            String xLbgSessionId,
+            String xLbgTrustToken,
+            String body) {
+
+        final Map<String, String> headerMap = new HashMap<>();
+        headerMap.put("x-lbg-txn-correlation-id", xLbgTxnCorrelationId);
+        headerMap.put("x-lbg-session-id", xLbgSessionId);
+
+        LOGGER.info(headerMap, () -> ENTRY_LOG + "idVerify");
+
+        boolean isSignatureValid =
+            phylaxProxyService.verifySignature(
+                xLbgTrustToken, body, headerMap);
+
+        IdVerifyResponse response = new IdVerifyResponse();
+
+        if (isSignatureValid) {
+            response.setStatus(IdVerifyResponse.StatusEnum.APPROVED);
+        } else {
+            response.setStatus(IdVerifyResponse.StatusEnum.REJECTED);
+        }
+
+        LOGGER.info(headerMap, () -> EXIT_LOG + "idVerify, status=" + response.getStatus());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<StatusCheckResponse> statusCheck(
+            String xLbgTxnCorrelationId,
+            String xLbgSessionId,
+            String regChannelVersion) {
+        // TODO: Implement in next sprint
+        return null;
+    }
+}
+----------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.authenticators.service;
 
 import com.lbg.iau.ssi.coordinator.authenticators.model.PhylaxVerifySignatureResponse;
