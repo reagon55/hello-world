@@ -1,3 +1,171 @@
+package com.lbg.iau.ssi.coordinator.authenticators.service;
+
+import com.lbg.sca.logger.ApplicationLogger;
+import com.lbg.sca.logger.LoggerManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class PhylaxProxyService {
+
+    private static final ApplicationLogger LOGGER =
+        LoggerManager.getApplicationLogger(PhylaxProxyService.class);
+
+    private static final String ENTRY_LOG = "PhylaxProxyService entry - ";
+    private static final String EXIT_LOG = "PhylaxProxyService exit - ";
+
+    private final RestTemplate restTemplate;
+    private final PhylaxProperties phylaxProperties;
+
+    public boolean verifySignature(String trustToken, String jwsBody,
+                                   Map<String, String> headerMap) {
+
+        LOGGER.info(headerMap, () -> ENTRY_LOG + "verifySignature");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("x-lbg-trust-token", trustToken);
+        headers.set("x-ibm-client-id", phylaxProperties.getClientId());
+        headers.set("x-ibm-client-secret", phylaxProperties.getClientSecret());
+        headers.set("Content-Type", "application/jwt");
+
+        // Forward correlation id for traceability
+        if (headerMap.containsKey("x-lbg-txn-correlation-id")) {
+            headers.set("x-lbg-txn-correlation-id",
+                headerMap.get("x-lbg-txn-correlation-id"));
+        }
+
+        HttpEntity<String> request = new HttpEntity<>(jwsBody, headers);
+
+        ResponseEntity<PhylaxVerifySignatureResponse> response =
+            restTemplate.postForEntity(
+                phylaxProperties.getVerifySignatureUrl(),
+                request,
+                PhylaxVerifySignatureResponse.class);
+
+        boolean isValid = response.getBody() != null
+            && response.getBody().isSignatureValid();
+
+        LOGGER.info(headerMap, () -> EXIT_LOG + "verifySignature, signatureValid=" + isValid);
+
+        return isValid;
+    }
+}
+---------------------------------------------------------------------------
+package com.lbg.iau.ssi.coordinator.authenticators.properties;
+
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
+
+@Data
+@Component
+@ConfigurationProperties(prefix = "phylax")
+public class PhylaxProperties {
+
+    private String verifySignatureUrl;
+    private String clientId;
+    private String clientSecret;
+}
+---------------------------------------------------------------------------
+package com.lbg.iau.ssi.coordinator.authenticators.model;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class PhylaxVerifySignatureResponse {
+
+    private boolean signatureValid;
+}
+
+-------------------------------------
+phylax:
+  verify-signature-url: ${PHYLAX_VERIFY_SIGNATURE_URL}
+  client-id: ${PHYLAX_CLIENT_ID}
+  client-secret: ${PHYLAX_CLIENT_SECRET}
+
+----------------------------
+package com.lbg.iau.ssi.coordinator.authenticators.controller;
+
+import com.lbg.iau.ssi.coordinator.authenticators.service.PhylaxProxyService;
+import com.lbg.iau.ssi.coordinator.contract.api.IdVerifyApi;
+import com.lbg.iau.ssi.coordinator.contract.model.IdVerifyResponse;
+import com.lbg.iau.ssi.coordinator.contract.model.StatusCheckResponse;
+import com.lbg.sca.logger.ApplicationLogger;
+import com.lbg.sca.logger.LoggerManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Validated
+@RestController
+@RequiredArgsConstructor
+public class IdVerifyController implements IdVerifyApi {
+
+    private static final ApplicationLogger LOGGER =
+        LoggerManager.getApplicationLogger(IdVerifyController.class);
+
+    private static final String ENTRY_LOG = "IdVerifyController entry - ";
+    private static final String EXIT_LOG = "IdVerifyController exit - ";
+
+    private final PhylaxProxyService phylaxProxyService;
+
+    @Override
+    public ResponseEntity<IdVerifyResponse> idVerify(
+            String xLbgTxnCorrelationId,
+            String xLbgSessionId,
+            String xLbgTrustToken,
+            String body) {
+
+        final Map<String, String> headerMap = new HashMap<>();
+        headerMap.put("x-lbg-txn-correlation-id", xLbgTxnCorrelationId);
+        headerMap.put("x-lbg-session-id", xLbgSessionId);
+
+        LOGGER.info(headerMap, () -> ENTRY_LOG + "idVerify");
+
+        boolean isSignatureValid =
+            phylaxProxyService.verifySignature(
+                xLbgTrustToken, body, headerMap);
+
+        IdVerifyResponse response = new IdVerifyResponse();
+
+        if (isSignatureValid) {
+            response.setStatus(
+                IdVerifyResponse.StatusEnum.APPROVED);
+        } else {
+            response.setStatus(
+                IdVerifyResponse.StatusEnum.REJECTED);
+        }
+
+        LOGGER.info(headerMap, () -> EXIT_LOG + "idVerify, status=" + response.getStatus());
+        return ResponseEntity.ok(response);
+    }
+
+    @Override
+    public ResponseEntity<StatusCheckResponse> statusCheck(
+            String xLbgTxnCorrelationId,
+            String xLbgSessionId,
+            String regChannelVersion) {
+
+        // TODO: Implement status check logic
+        return null;
+    }
+}
+-------------------------------
 package com.lbg.iau.ssi.coordinator.authenticators.mocks;
 
 import org.mockserver.mock.Expectation;
