@@ -1,3 +1,126 @@
+package com.lbg.iau.ssi.coordinator.authenticators.service;
+
+import com.lbg.iau.ssi.coordinator.authenticators.common.ErrorConfig;
+import com.lbg.iau.ssi.coordinator.authenticators.common.LbgRestTemplate;
+import com.lbg.iau.ssi.coordinator.authenticators.exception.ErrorCode;
+import com.lbg.iau.ssi.coordinator.authenticators.exception.PhylaxException;
+import com.lbg.iau.ssi.coordinator.authenticators.exception.PhylaxException.PhylaxErrorType;
+import com.lbg.iau.ssi.coordinator.authenticators.model.Error;
+import com.lbg.iau.ssi.coordinator.authenticators.model.PhylaxVerifySignatureResponse;
+import com.lbg.iau.ssi.coordinator.authenticators.properties.PhylaxProperties;
+import com.lbg.sca.logger.ApplicationLogger;
+import com.lbg.sca.logger.LoggerManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.client.ResourceAccessException;
+
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class PhylaxProxyService {
+
+    private static final ApplicationLogger LOGGER =
+            LoggerManager.getApplicationLogger(PhylaxProxyService.class);
+
+    private static final String ENTRY_LOG = "PhylaxProxyService entry - ";
+    private static final String EXIT_LOG = "PhylaxProxyService exit - ";
+
+    private final LbgRestTemplate lbgRestTemplate;
+    private final PhylaxProperties phylaxProperties;
+    private final ErrorConfig errorConfig;  // NEW - inject ErrorConfig
+
+    public boolean verifySignature(String trustToken, String jwsBody,
+                                   Map<String, String> headerMap) {
+
+        LOGGER.info(headerMap, () -> ENTRY_LOG + "verifySignature");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("x-lbg-trust-token", trustToken);
+        headers.set("x-ibm-client-id", phylaxProperties.getClientId());
+        headers.set("x-ibm-client-secret", phylaxProperties.getClientSecret());
+        headers.set("Content-Type", "application/jwt");
+        headers.set("Accept", "application/jwt");
+        headers.set("x-lbg-beta", "true");
+
+        // Forward correlation id for traceability
+        if (headerMap.containsKey("x-lbg-txn-correlation-id")) {
+            headers.set("x-lbg-txn-correlation-id",
+                    headerMap.get("x-lbg-txn-correlation-id"));
+        }
+
+        HttpEntity<String> request = new HttpEntity<>(jwsBody, headers);
+
+        try {
+            ResponseEntity<PhylaxVerifySignatureResponse> response =
+                    lbgRestTemplate.postForEntity(
+                            phylaxProperties.getVerifySignatureUrl(),
+                            request,
+                            PhylaxVerifySignatureResponse.class);
+
+            boolean isValid = response.getBody() != null
+                    && response.getBody().isSignatureValid();
+
+            LOGGER.info(headerMap, () -> EXIT_LOG + 
+                "verifySignature, signatureValid=" + isValid);
+
+            return isValid;
+
+        } catch (HttpClientErrorException e) {
+            LOGGER.error("Phylax client error: {} - {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            throw buildPhylaxException(e.getStatusCode().value(),
+                    PhylaxErrorType.VERIFICATION_FAILED);
+
+        } catch (HttpServerErrorException e) {
+            LOGGER.error("Phylax server error: {} - {}",
+                    e.getStatusCode(), e.getResponseBodyAsString());
+            throw buildPhylaxException(e.getStatusCode().value(),
+                    PhylaxErrorType.SERVICE_UNAVAILABLE);
+
+        } catch (ResourceAccessException e) {
+            LOGGER.error("Phylax connection failed: {}", e.getMessage());
+            Error error = errorConfig.getErrorMap()
+                    .get(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name());
+            throw new PhylaxException(error, PhylaxErrorType.CONNECTION_ERROR);
+        }
+    }
+
+    /**
+     * Build PhylaxException based on HTTP status code
+     */
+    private PhylaxException buildPhylaxException(int httpStatus,
+                                                  PhylaxErrorType errorType) {
+        ErrorCode errorCode = mapHttpStatusToErrorCode(httpStatus);
+        Error error = errorConfig.getErrorMap().get(errorCode.name());
+        return new PhylaxException(error, errorType);
+    }
+
+    /**
+     * Map HTTP status code from Phylax response to corresponding ErrorCode
+     */
+    private ErrorCode mapHttpStatusToErrorCode(int httpStatus) {
+        return switch (httpStatus) {
+            case 400 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_400;
+            case 401 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_401;
+            case 403 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_403;
+            case 404 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_404;
+            case 405 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_405;
+            case 406 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_406;
+            case 415 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_415;
+            case 429 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_429;
+            case 500 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_500;
+            case 503 -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503;
+            default -> ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_500;
+        };
+    }
+}
+------------------------------------------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.authenticators.exception;
 
 /**
