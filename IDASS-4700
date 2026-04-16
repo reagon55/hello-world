@@ -1,3 +1,86 @@
+errorConfig:
+  errorMap:
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_101:
+      reasonCode: required
+      action: TERMINATE
+      message: Missing mandatory header %s
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_101
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 400
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_400:
+      reasonCode: phylaxBadRequest
+      action: TERMINATE
+      message: Invalid request to Phylax verification service
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_400
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 400
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_401:
+      reasonCode: phylaxUnauthorized
+      action: TERMINATE
+      message: Phylax authentication failed
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_401
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 401
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_404:
+      reasonCode: phylaxNotFound
+      action: TERMINATE
+      message: Phylax resource not found
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_404
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 404
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_405:
+      reasonCode: phylaxMethodNotAllowed
+      action: TERMINATE
+      message: HTTP method not allowed by Phylax
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_405
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 405
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_406:
+      reasonCode: phylaxNotAcceptable
+      action: TERMINATE
+      message: Phylax response format not acceptable
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_406
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 406
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_429:
+      reasonCode: phylaxRateLimited
+      action: RETRY
+      message: Phylax rate limit exceeded
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_429
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 429
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_500:
+      reasonCode: phylaxInternalError
+      action: RETRY
+      message: Phylax internal server error
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_500
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 500
+
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503:
+      reasonCode: phylaxServiceUnavailable
+      action: RETRY
+      message: Phylax service unavailable
+      code: IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503
+      authStatus: TECHNICAL_ERROR
+      type: ERROR
+      statusCode: 503
+------------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.authenticators.controller;
 
 import com.lbg.iau.ssi.coordinator.authenticators.service.PhylaxProxyService;
