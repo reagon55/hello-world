@@ -1,3 +1,24 @@
+package com.lbg.iau.ssi.coordinator.authenticators.exception;
+
+/**
+ * The {@code ErrorCode} class represents enum strings. These enum strings are used as
+ * error codes used in {@link Error}
+ */
+public enum ErrorCode {
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_101,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_400,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_401,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_403,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_404,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_405,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_406,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_415,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_429,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_500,
+    IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503
+}
+
+-----------------------------------------------------------
 errorConfig:
   errorMap:
     IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_101:
