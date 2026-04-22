@@ -1,3 +1,39 @@
+@Service
+@RequiredArgsConstructor
+public class IdvServiceImpl implements IdvService {
+
+    private final LbgRestTemplate lbgRestTemplate;
+    private final IdvProperties idvProperties;
+
+    @Override
+    public AuthResult verify(String jwt,
+                             String body,
+                             Map<String, String> headerMap) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Content-Type", "application/json");
+
+        // Forward required headers
+        headers.set("x-lbg-session-id", headerMap.get("x-lbg-session-id"));
+        headers.set("x-lbg-txn-correlation-id", headerMap.get("x-lbg-txn-correlation-id"));
+        headers.set("reg-channel-version", headerMap.get("reg-channel-version"));
+
+        // If IDV expects JWT (depends on contract)
+        headers.set("Authorization", "Bearer " + jwt);
+
+        HttpEntity<String> request = new HttpEntity<>(body, headers);
+
+        ResponseEntity<String> response =
+                lbgRestTemplate.postForEntity(
+                        idvProperties.getVerifyUrl(),
+                        request,
+                        String.class
+                );
+
+        // IDV is usually async → may return 202
+        return new AuthResult(response.getBody(), response.getStatusCode());
+    }
+}----------------------------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.authenticators.service;
 
 import com.lbg.iau.ssi.coordinator.authenticators.common.ErrorConfig;
