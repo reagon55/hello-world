@@ -1,3 +1,43 @@
+
+// Interface
+public interface PhylaxProxyService {
+    String verifySignature(String trustToken, String jwsBody, Map<String, String> headerMap);
+}
+
+// Impl — much shorter now
+@Override
+public String verifySignature(String trustToken, String jwsBody, Map<String, String> headerMap) {
+    LOGGER.info(headerMap, () -> ENTRY_LOG + "verifySignature");
+
+    HttpHeaders headers = buildHeaders(trustToken, headerMap);
+    HttpEntity<String> request = new HttpEntity<>(jwsBody, headers);
+    String url = phylaxProperties.getVerifySignatureUrl();
+
+    ResponseEntity<String> response;
+    try {
+        response = lbgRestTemplate.postForEntity(url, request, String.class);
+    } catch (HttpStatusCodeException e) {
+        LOGGER.error(headerMap, () -> "Phylax error: " + e.getStatusCode() + " body: " + e.getResponseBodyAsString(), e);
+        throw errorUtil.buildCoordinatorException(
+            errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()), e);
+    } catch (ResourceAccessException e) {
+        LOGGER.error(headerMap, () -> "Phylax unreachable: " + e.getMessage(), e);
+        throw errorUtil.buildCoordinatorException(
+            errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()), e);
+    }
+
+    String phylaxJws = response.getBody();
+    if (phylaxJws == null || phylaxJws.isEmpty()) {
+        LOGGER.error(headerMap, () -> "Phylax returned empty response");
+        throw errorUtil.buildCoordinatorException(
+            errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()));
+    }
+
+    LOGGER.info(headerMap, () -> EXIT_LOG + "verifySignature - received JWS from Phylax");
+    return phylaxJws;
+}
+
+-------------------------
 public interface PhylaxProxyService {
     PhylaxVerifySignatureResponse verifySignature(String trustToken, String jwsBody, Map<String, String> headerMap);
 }
