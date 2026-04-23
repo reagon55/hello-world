@@ -1,3 +1,47 @@
+@Override
+public AuthResult verify(String jwt, String body, Map<String, String> headerMap) {
+    LOGGER.info(headerMap, () -> "IdvServiceImpl.verify entry");
+    
+    HttpHeaders headers = CommonUtil.buildHttpHeaders(headerMap);
+    headers.set("Content-Type", "application/json");
+    headers.set("Authorization", "Bearer " + jwt);
+    
+    HttpEntity<String> request = new HttpEntity<>(body, headers);
+    String url = idvProperties.getVerifyUrl("idVerify");
+    
+    LOGGER.info(headerMap, () -> "Calling IDV MS at: " + url);
+    
+    ResponseEntity<String> response;
+    try {
+        response = lbgRestTemplate.postForEntity(url, request, String.class);
+    } catch (HttpStatusCodeException e) {
+        // IDV returned 4xx or 5xx
+        LOGGER.error(headerMap, 
+            () -> "IDV returned error status: " + e.getStatusCode() 
+                  + " body: " + e.getResponseBodyAsString(), e);
+        Error error = buildError(
+            ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503, 
+            "IDV_ERROR_RESPONSE");
+        throw new CoordinatorException(error, e);
+    } catch (ResourceAccessException e) {
+        // IDV unreachable / timeout
+        LOGGER.error(headerMap, () -> "IDV unreachable: " + e.getMessage(), e);
+        Error error = buildError(
+            ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503, 
+            "IDV_UNAVAILABLE");
+        throw new CoordinatorException(error, e);
+    }
+    
+    LOGGER.info(headerMap, () -> "IDV responded with status: " + response.getStatusCode());
+    
+    // IDV is usually async → may return 202
+    return new AuthResult(
+        response.getBody(),
+        HttpStatus.valueOf(response.getStatusCode().value())
+    );
+}
+
+---------------------------------------------------------------
 @Service
 @RequiredArgsConstructor
 public class IdvServiceImpl implements IdvService {
