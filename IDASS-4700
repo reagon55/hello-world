@@ -1,4 +1,90 @@
-@Override
+public interface PhylaxProxyService {
+    PhylaxVerifySignatureResponse verifySignature(String trustToken, String jwsBody, Map<String, String> headerMap);
+}
+
+@Service
+@RequiredArgsConstructor
+public class PhylaxProxyServiceImpl implements PhylaxProxyService {
+
+    private static final ApplicationLogger LOGGER = LoggerManager.getApplicationLogger(PhylaxProxyServiceImpl.class);
+    private static final String ENTRY_LOG = "PhylaxProxyService entry - ";
+    private static final String EXIT_LOG = "PhylaxProxyService exit - ";
+
+    private final LbgRestTemplate lbgRestTemplate;
+    private final PhylaxProperties phylaxProperties;
+    private final ErrorUtil errorUtil;
+    private final JsonUtil jsonUtil;
+
+    @Override
+    public PhylaxVerifySignatureResponse verifySignature(String trustToken, String jwsBody, Map<String, String> headerMap) {
+        LOGGER.info(headerMap, () -> ENTRY_LOG + "verifySignature");
+
+        HttpHeaders headers = buildHeaders(trustToken, headerMap);
+        HttpEntity<String> request = new HttpEntity<>(jwsBody, headers);
+        String url = phylaxProperties.getVerifySignatureUrl();
+
+        ResponseEntity<String> response;
+        try {
+            response = lbgRestTemplate.postForEntity(url, request, String.class);
+        } catch (HttpStatusCodeException e) {
+            LOGGER.error(headerMap, () -> "Phylax error: " + e.getStatusCode() + " body: " + e.getResponseBodyAsString(), e);
+            throw errorUtil.buildCoordinatorException(
+                errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()), e);
+        } catch (ResourceAccessException e) {
+            LOGGER.error(headerMap, () -> "Phylax unreachable: " + e.getMessage(), e);
+            throw errorUtil.buildCoordinatorException(
+                errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()), e);
+        }
+
+        String jwt = response.getBody();
+        if (jwt == null || jwt.isEmpty()) {
+            LOGGER.error(headerMap, () -> "Phylax response body is null/empty");
+            throw errorUtil.buildCoordinatorException(
+                errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()));
+        }
+
+        PhylaxVerifySignatureResponse parsed = parseJwsPayload(jwt, headerMap);
+
+        if (!parsed.isSignatureValid()) {
+            LOGGER.error(headerMap, () -> "Phylax reported INVALID signature");
+            throw errorUtil.buildCoordinatorException(
+                errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_401.name()));
+        }
+
+        LOGGER.info(headerMap, () -> EXIT_LOG + "verifySignature, signatureValid=true");
+        return parsed;
+    }
+
+    private HttpHeaders buildHeaders(String trustToken, Map<String, String> headerMap) {
+        HttpHeaders headers = CommonUtil.buildHttpHeaders(headerMap);
+        headers.set("x-lbg-trust-token", trustToken);
+        headers.set("x-ibm-client-id", phylaxProperties.getClientId());
+        headers.set("x-ibm-client-secret", phylaxProperties.getClientSecret());
+        headers.set("Content-Type", "application/jwt");
+        headers.set("Accept", "application/jwt");
+        headers.set("x-lbg-beta", "true");
+        return headers;
+    }
+
+    private PhylaxVerifySignatureResponse parseJwsPayload(String jwt, Map<String, String> headerMap) {
+        try {
+            String[] parts = jwt.split("\\.");
+            if (parts.length != 3) {
+                throw new IllegalArgumentException("Malformed JWS: expected 3 parts, got " + parts.length);
+            }
+            String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+            // TODO: IDASS-XXXX - verify JWS signature cryptographically against Phylax public cert
+            return jsonUtil.fromJson(payload, PhylaxVerifySignatureResponse.class);
+        } catch (Exception e) {
+            LOGGER.error(headerMap, () -> "Failed to parse Phylax JWS response: " + e.getMessage(), e);
+            throw errorUtil.buildCoordinatorException(
+                errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_500.name()), e);
+        }
+    }
+}
+
+---------------------
+-----@Override
 public AuthResult verify(String jwt, String body, Map<String, String> headerMap) {
     LOGGER.info(headerMap, () -> "IdvServiceImpl.verify entry");
     
