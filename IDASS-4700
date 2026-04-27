@@ -1,4 +1,56 @@
 
+private Expectation[] idvVerify() {
+    return new Expectation[] {
+        // Happy Path - 200 verification successful
+        new Expectation(
+                request()
+                        .withMethod("POST")
+                        .withPath(".*" + "/idVerify")
+                        .withHeader("x-lbg-trust-token", "valid-token")
+        ).thenRespond(
+                response()
+                        .withStatusCode(200)
+                        .withHeader("x-lbg-txn-correlation-id", "c")
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{"
+                            + "\"availableAuthenticators\": ["
+                            + "{\"category\": \"possession\", \"authenticators\": [\"sms-otp\", \"call-challenge\", \"appsign\"]},"
+                            + "{\"category\": \"knowledge\", \"authenticators\": [\"mi\", \"password\"]},"
+                            + "{\"category\": \"inherence\", \"authenticators\": [\"behavioural-biometrics\"]}"
+                            + "]}")
+        ),
+        // Pending Path - 202 verification still pending
+        new Expectation(
+                request()
+                        .withMethod("POST")
+                        .withPath(".*" + "/idVerify")
+                        .withHeader("x-lbg-trust-token", "pending-token")
+        ).thenRespond(
+                response()
+                        .withStatusCode(202)
+                        .withHeader("x-lbg-txn-correlation-id", "c")
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"status\": \"pending\", \"message\": \"ID verification is still pending. Please check back later.\"}")
+        ),
+        // Unhappy Path - 400 error
+        new Expectation(
+                request()
+                        .withMethod("POST")
+                        .withPath(".*" + "/idVerify")
+                        .withHeader("x-lbg-trust-token", "invalid-token")
+        ).thenRespond(
+                response()
+                        .withStatusCode(400)
+                        .withHeader("x-lbg-txn-correlation-id", "c")
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"error\": \"verification failed\"}")
+        )
+    };
+}
+
+
+
+---------------------------------------
 // Interface
 public interface PhylaxProxyService {
     String verifySignature(String trustToken, String jwsBody, Map<String, String> headerMap);
