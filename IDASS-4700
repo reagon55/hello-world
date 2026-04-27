@@ -1,4 +1,26 @@
 
+.withStatusCode(202)
+.withHeader("Content-Type", "application/json")
+.withBody("""
+    {
+      "status": "pending",
+      "message": "ID verification is still pending. Please check back later."
+    }
+    """)
+------------------------------------------
+.withBody("""
+    {
+      "tokenId": "*AAJTSQACMDIABHR5cGUAA0pXVAACUzEAAjAx*eyJ0eXAiOiJKV1QiLCJ6aXAiOiJOT05FIiwi",
+      "availableAuthenticators": [
+        {"category": "possession", "authenticators": ["sms-otp", "call-challenge", "appsign"]},
+        {"category": "knowledge", "authenticators": ["mi", "password"]},
+        {"category": "inherence", "authenticators": ["behavioural-biometrics", "idv"]}
+      ],
+      "enrolForPasskey": true
+    }
+    """)
+----------------------------------------
+
 private Expectation[] idvVerify() {
     return new Expectation[] {
         // Happy Path - 200 verification successful
