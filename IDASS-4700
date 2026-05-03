@@ -1,4 +1,89 @@
 
+package com.lbg.iau.ssi.coordinator.authenticators.service.impl;
+
+import com.lbg.iau.ssi.coordinator.authenticators.common.LbgRestTemplate;
+import com.lbg.iau.ssi.coordinator.authenticators.common.util.CommonUtil;
+import com.lbg.iau.ssi.coordinator.authenticators.common.util.ErrorUtil;
+import com.lbg.iau.ssi.coordinator.authenticators.common.util.JsonUtil;
+import com.lbg.iau.ssi.coordinator.authenticators.exception.ErrorCode;
+import com.lbg.iau.ssi.coordinator.authenticators.model.PhylaxVerifyResult;
+import com.lbg.iau.ssi.coordinator.authenticators.properties.PhylaxProperties;
+import com.lbg.iau.ssi.coordinator.authenticators.service.PhylaxProxyService;
+import com.lbg.sca.logger.ApplicationLogger;
+import com.lbg.sca.logger.LoggerManager;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+
+import java.util.Map;
+
+@Service
+@RequiredArgsConstructor
+public class PhylaxProxyServiceImpl implements PhylaxProxyService {
+
+    private static final ApplicationLogger LOGGER = LoggerManager.getApplicationLogger(PhylaxProxyServiceImpl.class);
+    private static final String ENTRY_LOG = "PhylaxProxyService entry - ";
+    private static final String EXIT_LOG = "PhylaxProxyService exit - ";
+
+    // Phylax response header names (per API contract — all 3 required)
+    private static final String HEADER_TXN_CORRELATION_ID = "x-lbg-txn-correlation-id";
+    private static final String HEADER_USER_DEVICE_LINK = "x-lbg-user-device-link";
+    private static final String HEADER_PHYLAX_SESSION_ID = "x-lbg-phylax-session-id";
+
+    private final LbgRestTemplate lbgRestTemplate;
+    private final PhylaxProperties phylaxProperties;
+    private final ErrorUtil errorUtil;
+    private final JsonUtil jsonUtil;
+
+    @Override
+    public PhylaxVerifyResult verifySignature(String trustToken, String jwsBody, Map<String, String> headerMap) {
+        LOGGER.info(headerMap, () -> ENTRY_LOG + "verifySignature");
+
+        // Build outbound request to Phylax via APIC
+        HttpHeaders headers = CommonUtil.buildHttpHeaders(headerMap);
+        HttpEntity<String> request = new HttpEntity<>(jwsBody, headers);
+        String url = phylaxProperties.getVerifySignatureUrl();
+
+        // Call Phylax via APIC gateway
+        ResponseEntity<String> response;
+        try {
+            response = lbgRestTemplate.postForEntity(url, request, String.class);
+        } catch (HttpStatusCodeException e) {
+            LOGGER.error(headerMap, () -> "Phylax error: " + e.getStatusCode() + " body: " + e.getResponseBodyAsString(), e);
+            throw errorUtil.buildCoordinatorException(
+                    errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()), e);
+        } catch (ResourceAccessException e) {
+            LOGGER.error(headerMap, () -> "Phylax unreachable: " + e.getMessage(), e);
+            throw errorUtil.buildCoordinatorException(
+                    errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()), e);
+        }
+
+        // Extract JWS payload from response body
+        String phylaxJws = response.getBody();
+        if (phylaxJws == null || phylaxJws.isEmpty()) {
+            LOGGER.error(headerMap, () -> "Phylax returned empty response body");
+            throw errorUtil.buildCoordinatorException(
+                    errorUtil.getErrorByErrorCode(ErrorCode.IAU_SSI_COORDINATOR_AUTHENTICATORS_ERR_503.name()));
+        }
+
+        // Extract required Phylax response headers (per API contract)
+        // These flow through to IDV downstream and provide distributed tracing
+        HttpHeaders responseHeaders = response.getHeaders();
+        String correlationId = responseHeaders.getFirst(HEADER_TXN_CORRELATION_ID);
+        String userDeviceLink = responseHeaders.getFirst(HEADER_USER_DEVICE_LINK);
+        String phylaxSessionId = responseHeaders.getFirst(HEADER_PHYLAX_SESSION_ID);
+
+        LOGGER.info(headerMap, () -> EXIT_LOG + "verifySignature - received JWS and headers from Phylax");
+
+        return new PhylaxVerifyResult(phylaxJws, correlationId, userDeviceLink, phylaxSessionId);
+    }
+}
+
+---------------------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.authenticators.model;
 
 import lombok.AllArgsConstructor;
