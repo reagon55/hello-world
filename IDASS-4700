@@ -1,4 +1,40 @@
 
+package com.lbg.iau.ssi.coordinator.authenticators.model;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+/**
+ * Captures the complete Phylax verifySignature response.
+ * 
+ * Per Phylax API contract, required response data is split between body and headers:
+ * - Body: JWT-encoded payload
+ * - Headers (REQUIRED): correlation ID + identity context for downstream IDV
+ * 
+ * TODO [IDASS-7936]: Wire into PhylaxProxyService.verifySignature() return type.
+ * Currently PhylaxProxyServiceImpl returns only the JWS body, discarding 
+ * required response headers.
+ */
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+public class PhylaxVerifyResult {
+    
+    /** JWT-encoded payload from Phylax response body */
+    private String jws;
+    
+    /** x-lbg-txn-correlation-id - distributed tracing across services */
+    private String correlationId;
+    
+    /** x-lbg-user-device-link - required for IDV downstream verification */
+    private String userDeviceLink;
+    
+    /** x-lbg-phylax-session-id - required for IDV downstream verification */
+    private String phylaxSessionId;
+}
+
+-----------------------------------------------------------------------------------------------------
 .withStatusCode(202)
 .withHeader("Content-Type", "application/json")
 .withBody("""
