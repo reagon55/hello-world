@@ -1,4 +1,158 @@
+import java.util.*;
+import java.util.stream.Collectors;
 
+public class Java8MethodCheatSheet {
+
+    public static void main(String[] args) {
+
+        List<Employee> employees = Arrays.asList(
+
+                new Employee(101, "Ram", "Development", 90000),
+                new Employee(102, "Hari", "Testing", 50000),
+                new Employee(103, "Shyam", "Development", 85000),
+                new Employee(104, "Krishna", "DevOps", 75000),
+                new Employee(105, "Arjun", "Development", 95000)
+        );
+
+        // ================================
+        // 1. forEach() -> Consumer
+        // ================================
+
+        System.out.println("----- forEach Example -----");
+
+        employees.forEach(System.out::println);
+
+        // ================================
+        // 2. filter() -> Predicate
+        // ================================
+
+        System.out.println("\n----- filter Example -----");
+
+        List<Employee> highSalaryEmployees =
+                employees.stream()
+                        .filter(e -> e.getSalary() > 80000)
+                        .collect(Collectors.toList());
+
+        highSalaryEmployees.forEach(System.out::println);
+
+        // ================================
+        // 3. map() -> Function
+        // ================================
+
+        System.out.println("\n----- map Example -----");
+
+        List<String> employeeNames =
+                employees.stream()
+                        .map(Employee::getName)
+                        .collect(Collectors.toList());
+
+        System.out.println(employeeNames);
+
+        // ================================
+        // 4. filter + toMap
+        // ================================
+
+        System.out.println("\n----- filter + toMap Example -----");
+
+        Map<Integer, String> developmentEmployees =
+                employees.stream()
+                        .filter(e ->
+                                e.getDept().equals("Development")
+                                        && e.getSalary() > 80000)
+
+                        .collect(Collectors.toMap(
+                                Employee::getId,
+                                Employee::getName
+                        ));
+
+        System.out.println(developmentEmployees);
+
+        // ================================
+        // 5. sorted()
+        // ================================
+
+        System.out.println("\n----- sorted Example -----");
+
+        List<Employee> sortedEmployees =
+                employees.stream()
+                        .sorted(Comparator.comparing(Employee::getSalary))
+                        .collect(Collectors.toList());
+
+        sortedEmployees.forEach(System.out::println);
+
+        // ================================
+        // 6. count()
+        // ================================
+
+        long count =
+                employees.stream()
+                        .filter(e -> e.getDept().equals("Development"))
+                        .count();
+
+        System.out.println("\nDevelopment Employee Count = " + count);
+
+        // ================================
+        // 7. findFirst()
+        // ================================
+
+        Optional<Employee> firstEmployee =
+                employees.stream()
+                        .filter(e -> e.getSalary() > 90000)
+                        .findFirst();
+
+        System.out.println("\nFirst Employee > 90000 Salary");
+        firstEmployee.ifPresent(System.out::println);
+    }
+}
+
+// =====================================
+// Employee Class
+// =====================================
+
+class Employee {
+
+    private int id;
+    private String name;
+    private String dept;
+    private double salary;
+
+    public Employee(int id, String name,
+                    String dept, double salary) {
+
+        this.id = id;
+        this.name = name;
+        this.dept = dept;
+        this.salary = salary;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDept() {
+        return dept;
+    }
+
+    public double getSalary() {
+        return salary;
+    }
+
+    @Override
+    public String toString() {
+
+        return "Employee{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", dept='" + dept + '\'' +
+                ", salary=" + salary +
+                '}';
+    }
+}
+--------------------------------------------------------------------------------
 package com.lbg.iau.ssi.coordinator.authenticators.service.impl;
 
 import com.lbg.iau.ssi.coordinator.authenticators.common.LbgRestTemplate;
