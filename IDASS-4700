@@ -1,3 +1,22 @@
+External Apigee
+      ↓ signed JWT
+Authentication Facade
+      ↓ /auth/idv/verify
+IDV MS
+      ↓
+IAU Device Link Management Core Service
+      ↓
+Phylax Verification Service
+      ↓
+returns decoded/validated device-link data
+      ↓
+IDV MS processes verification result
+      ↓
+Authentication Facade gets response
+      ↓
+Client
+
+------------------------------------------------------
 import java.util.*;
 import java.util.stream.Collectors;
 
